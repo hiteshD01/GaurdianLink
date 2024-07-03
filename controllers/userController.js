@@ -12,9 +12,11 @@ exports.register = async (req, res) => {
   if (emailExists)
     return res.status(400).json({ message: "Email already exists" });
 
-  const usernameExists = await User.findOne({ username: req.body.username });
-  if (usernameExists)
-    return res.status(400).json({ message: "Username already exists" });
+  if (req.body.role === "driver") {
+    const usernameExists = await User.findOne({ username: req.body.username });
+    if (usernameExists)
+      return res.status(400).json({ message: "Username already exists" });
+  }
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(req.body.password, salt);

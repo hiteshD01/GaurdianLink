@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
-    required: true,
     unique: true,
+    sparse: true,
   },
   email: {
     type: String,
@@ -35,16 +35,13 @@ const userSchema = new mongoose.Schema({
   address: {
     type: String,
   },
-  hardware: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Hardware",
-  },
   vehicle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Vehicle",
   },
   share_contacts: {
     type: Number,
+    enum: [0, 1],
   },
   radius: {
     type: Number,
@@ -56,23 +53,23 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ["received", "cancel", "delivered", "order_received"],
   },
-  trips: {
-    type: Array,
-  },
   auto_app_update: {
     type: Number,
+    enum: [0, 1],
   },
   id_no: {
     type: Number,
   },
   social_app: {
     type: Number,
+    enum: [0, 1],
   },
   company_bio: {
     type: String,
   },
   emergency_help: {
     type: Number,
+    enum: [0, 1],
   },
   access_token: {
     type: String,
