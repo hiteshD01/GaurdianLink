@@ -19,12 +19,14 @@ const hardwareRoutes = require("./routes/hardwareRoutes");
 const termsAndConditionsRoutes = require("./routes/termsAndConditionsRoutes");
 const privacyPolicyRoutes = require("./routes/privacyPolicyRoutes");
 const vehicleRouters = require("./routes/vehicleRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
 
 app.use("/api/users", userRoutes);
 app.use("/api/hardware", hardwareRoutes);
 app.use("/api/terms-and-conditions", termsAndConditionsRoutes);
 app.use("/api/privacy-policy", privacyPolicyRoutes);
 app.use("/api/vehicle", vehicleRouters);
+app.use("/api/payment", paymentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server up and running on port ${PORT}`));
