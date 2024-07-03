@@ -3,35 +3,16 @@ const userController = require("../controllers/userController");
 const verifyToken = require("../middlewares/auth");
 const authorizeRoles = require("../middlewares/authorizeRoles");
 
-router.post(
-  "/register",
-  verifyToken,
-  authorizeRoles("driver", "company", "super_admin"),
-  userController.register
-);
-router.post(
-  "/login",
-  verifyToken,
-  authorizeRoles("driver", "company", "super_admin"),
-  userController.login
-);
+router.post("/register", userController.register);
+router.post("/login", userController.login);
+router.post("/forgot-password", userController.forgotPassword);
+router.post("/verify-otp", userController.verifyOTP);
+
 router.get(
   "/",
   verifyToken,
   authorizeRoles("driver", "company", "super_admin"),
   userController.getUserByRole
-);
-router.post(
-  "/forgot-password",
-  verifyToken,
-  authorizeRoles("driver", "company", "super_admin"),
-  userController.forgotPassword
-);
-router.post(
-  "/verify-otp",
-  verifyToken,
-  authorizeRoles("driver", "company", "super_admin"),
-  userController.verifyOTP
 );
 router.get(
   "/:id",

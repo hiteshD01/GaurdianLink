@@ -21,11 +21,15 @@ exports.register = async (req, res) => {
   const user = new User({
     ...req.body,
     password: hashedPassword,
-    access_token: jwt.sign({ _id: req.body.email }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    }),
+    access_token: jwt.sign(
+      { _id: req.body.email, role: req.body.role },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "1h",
+      }
+    ),
     refresh_token: jwt.sign(
-      { _id: req.body.email },
+      { _id: req.body.email, role: req.body.role },
       process.env.REFRESH_JWT_SECRET,
       { expiresIn: "7d" }
     ),
@@ -50,16 +54,20 @@ exports.login = async (req, res) => {
   const validPass = await bcrypt.compare(req.body.password, user.password);
   if (!validPass) return res.status(400).json({ message: "Invalid password" });
 
-  const accessToken = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  const accessToken = jwt.sign(
+    { _id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1h",
+    }
+  );
   const refreshToken = jwt.sign(
-    { _id: user._id },
+    { _id: user._id, role: user.role },
     process.env.REFRESH_JWT_SECRET,
     { expiresIn: "7d" }
   );
 
-  res.header("auth-token", accessToken).json({
+  res.header("authorization", accessToken).json({
     accessToken,
     refreshToken,
   });
