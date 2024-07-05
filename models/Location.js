@@ -1,3 +1,4 @@
+const { required } = require("joi");
 const mongoose = require("mongoose");
 
 const locationSchema = new mongoose.Schema({
@@ -11,6 +12,11 @@ const locationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ["sos", "start_trip", "end_trip"],
   },
   createdAt: {
     type: Date,

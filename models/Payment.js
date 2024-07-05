@@ -14,17 +14,17 @@ const paymentSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  amount: {
+  item_price: {
+    type: Number,
+    required: true,
+  },
+  total_amount: {
     type: Number,
     required: true,
   },
   status: {
     type: String,
-    // enum: ["received", "cancel", "delivered", "order_received"],
-  },
-  reference: {
-    type: String,
-    required: true,
+    enum: ["received", "cancel", "delivered", "order_received", "not_received"],
   },
   createdAt: {
     type: Date,

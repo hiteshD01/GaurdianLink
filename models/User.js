@@ -84,12 +84,6 @@ const userSchema = new mongoose.Schema({
   disable: {
     type: Boolean,
   },
-  deviceTokens: [
-    {
-      mobileNumber: { type: Number, required: true },
-      token: { type: String, required: true },
-    },
-  ],
   createdAt: {
     type: Date,
     default: Date.now,

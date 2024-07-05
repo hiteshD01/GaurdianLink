@@ -1,29 +1,57 @@
+const axios = require("axios");
 const Location = require("../models/Location");
-const User = require("../models/User");
-const { fcm, db } = require("../firebaseService");
-const sendNotification = require("../utils/sendNotification");
 
 exports.createSOS = async (req, res) => {
-    const { lat, long, address } = req.body;
-    const userId = req.user._id;
-  
-    try {
-      const location = new Location({ lat, long, address, user_id: userId });
-      await location.save();
-  
-      const user = await User.findById(userId);
-  
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+  const { lat, long, address, type, fcmToken } = req.body;
+
+  const newLocation = new Location({
+    lat,
+    long,
+    address,
+    type,
+    user_id: req.user._id,
+  });
+
+  try {
+    const savedLocation = await newLocation.save();
+
+    if (fcmToken) {
+      const fcmServerKey = process.env.FCM_SERVER_KEY;
+      const notificationPayload = {
+        to: fcmToken,
+        notification: {
+          body: "This is testing notification",
+          title: "Test new Notification",
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+        data: {
+          body: "This is testing notification",
+          title: "Test new Notification",
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      };
+      
+      const response = await axios.post(
+        "https://fcm.googleapis.com/fcm/send",
+        notificationPayload,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `key=${fcmServerKey}`,
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        console.log("Notification sent successfully");
+      } else {
+        console.error("Failed to send notification", response.data);
       }
-  
-      const message = 'Emergency! Please check the location and assist if needed.';
-      await sendNotification(user.contacts, message);
-  
-      res.status(201).json({ message: 'SOS signal sent and notification dispatched.' });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
     }
+    res.status(201).json(savedLocation);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 };
 
 // exports.createSOS = async (req, res) => {

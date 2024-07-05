@@ -194,29 +194,3 @@ exports.deleteUserById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-exports.saveDeviceToken = async (req, res) => {
-  const { mobileNumber, token } = req.body;
-  const userId = req.user._id;
-
-  try {
-    const user = await User.findById(userId);
-
-    const existingTokenIndex = user.deviceTokens.findIndex(
-      (dt) => dt.mobileNumber === mobileNumber
-    );
-
-    if (existingTokenIndex >= 0) {
-      user.deviceTokens[existingTokenIndex].token = token;
-    } else {
-      user.deviceTokens.push({ mobileNumber, token });
-    }
-
-    const savedUser = await user.save();
-    console.log("Device token saved for user:", savedUser);
-
-    res.status(200).json({ message: "Device token saved successfully." });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};

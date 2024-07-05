@@ -10,7 +10,17 @@ router.post(
   authorizeRoles("driver", "company", "super_admin"),
   paymentController.buyHardware
 );
-
-router.post("/notify", paymentController.paymentNotification);
+router.get(
+  "/getAllOrders",
+  verifyToken,
+  authorizeRoles("super_admin"),
+  paymentController.getAllOrders
+);
+router.put(
+  "/updateOrder/:id",
+  verifyToken,
+  authorizeRoles("super_admin"),
+  paymentController.updateOrder
+);
 
 module.exports = router;
