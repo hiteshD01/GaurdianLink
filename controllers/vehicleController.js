@@ -24,7 +24,13 @@ const upload = multer({
       cb("Error: Images Only!");
     }
   },
-}).array("images", 5);
+}).fields([
+  { name: "image_1", maxCount: 1 },
+  { name: "image_2", maxCount: 1 },
+  { name: "image_3", maxCount: 1 },
+  { name: "image_4", maxCount: 1 },
+  { name: "image_5", maxCount: 1 },
+]);
 
 exports.createVehicle = (req, res) => {
   upload(req, res, async (err) => {
@@ -38,14 +44,20 @@ exports.createVehicle = (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const images = req.files.map(file => file.path);
+    const images = {
+      image_1: req.files.image_1 ? req.files.image_1[0].path : null,
+      image_2: req.files.image_2 ? req.files.image_2[0].path : null,
+      image_3: req.files.image_3 ? req.files.image_3[0].path : null,
+      image_4: req.files.image_4 ? req.files.image_4[0].path : null,
+      image_5: req.files.image_5 ? req.files.image_5[0].path : null,
+    };
 
     try {
       const vehicle = new Vehicle({
         vehicle_name,
         reg_no,
         type,
-        images,
+        ...images,
         user_id,
       });
 
@@ -91,8 +103,19 @@ exports.updateVehicle = (req, res) => {
       type,
     };
 
-    if (req.files.length > 0) {
-      updateData.images = req.files.map(file => file.path);
+    const imagesToUpdate = {
+      image_1: req.files.image_1 ? req.files.image_1[0].path : null,
+      image_2: req.files.image_2 ? req.files.image_2[0].path : null,
+      image_3: req.files.image_3 ? req.files.image_3[0].path : null,
+      image_4: req.files.image_4 ? req.files.image_4[0].path : null,
+      image_5: req.files.image_5 ? req.files.image_5[0].path : null,
+    };
+
+    // Remove null values from imagesToUpdate object
+    Object.keys(imagesToUpdate).forEach(key => imagesToUpdate[key] === null && delete imagesToUpdate[key]);
+
+    if (Object.keys(imagesToUpdate).length > 0) {
+      updateData.$set = imagesToUpdate;
     }
 
     try {
