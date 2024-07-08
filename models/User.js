@@ -76,6 +76,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     enum: [0, 1],
   },
+  fcm_token: {
+    type: String,
+    required: true,
+  },
   access_token: {
     type: String,
     required: true,

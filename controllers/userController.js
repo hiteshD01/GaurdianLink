@@ -51,34 +51,44 @@ exports.login = async (req, res) => {
   const { error } = loginValidation(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
 
-  const user = await User.findOne({ email: req.body.email });
+  const { email, password, fcm_token } = req.body;
+
+  const user = await User.findOne({ email });
   if (!user)
     return res.status(400).json({ message: "Email or password is wrong" });
 
-  const validPass = await bcrypt.compare(req.body.password, user.password);
+  const validPass = await bcrypt.compare(password, user.password);
   if (!validPass) return res.status(400).json({ message: "Invalid password" });
 
-  const accessToken = jwt.sign(
-    { _id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "1h",
-    }
-  );
-  const refreshToken = jwt.sign(
-    { _id: user._id, role: user.role },
-    process.env.REFRESH_JWT_SECRET,
-    { expiresIn: "7d" }
-  );
+  if (fcm_token) {
+    user.fcm_token = fcm_token;
+  }
 
-  const vehicle = await Vehicle.find({ user_id: user._id });
+  try {
+    await user.save();
 
-  res.header("authorization", accessToken).json({
-    accessToken,
-    refreshToken,
-    user,
-    vehicle: vehicle || [],
-  });
+    const accessToken = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    const refreshToken = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.REFRESH_JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    const vehicles = await Vehicle.find({ user_id: user._id });
+
+    res.header("authorization", accessToken).json({
+      accessToken,
+      refreshToken,
+      user,
+      vehicles: vehicles || [],
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 exports.getUserByRole = async (req, res) => {
