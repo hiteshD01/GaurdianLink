@@ -35,10 +35,6 @@ const userSchema = new mongoose.Schema({
   address: {
     type: String,
   },
-  vehicle: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Vehicle",
-  },
   share_contacts: {
     type: Number,
     enum: [0, 1],

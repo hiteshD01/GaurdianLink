@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { sendOTP } = require("../utils/smsService");
 const { registerValidation, loginValidation } = require("../utils/validation");
+const Vehicle = require("../models/Vehicle");
 
 exports.register = async (req, res) => {
   const { error } = registerValidation(req.body);
@@ -39,7 +40,8 @@ exports.register = async (req, res) => {
 
   try {
     const savedUser = await user.save();
-    res.status(201).json({ user: savedUser });
+    const vehicle = await Vehicle.find({ user_id: savedUser._id });
+    res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -69,10 +71,13 @@ exports.login = async (req, res) => {
     { expiresIn: "7d" }
   );
 
+  const vehicle = await Vehicle.find({ user_id: user._id });
+
   res.header("authorization", accessToken).json({
     accessToken,
     refreshToken,
-    user
+    user,
+    vehicle: vehicle || [],
   });
 };
 
