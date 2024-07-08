@@ -12,7 +12,6 @@ router.post(
 );
 router.get(
   "/",
-  verifyToken,
   authorizeRoles("driver", "company", "super_admin"),
   privacyPolicyController.getPrivacyPolicy
 );
