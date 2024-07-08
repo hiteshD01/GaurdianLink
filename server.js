@@ -21,6 +21,10 @@ const vehicleRouters = require("./routes/vehicleRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const locationRoutes = require("./routes/locationRoutes");
 
+app.get("/", (req, res) => {
+  res.send("Hey there!! Welcome to Gaurdian Link APIs");
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/hardware", hardwareRoutes);
 app.use("/api/terms-and-conditions", termsAndConditionsRoutes);
