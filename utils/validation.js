@@ -16,12 +16,15 @@ const driverFields = {
   role: role.valid("driver"),
   share_contacts: Joi.number().required(),
   radius: Joi.number().required(),
-  contacts: Joi.array().required(),
   hardware_status: Joi.string().required(),
   auto_app_update: Joi.number().required(),
   id_no: Joi.number().required(),
   social_app: Joi.number().required(),
   emergency_help: Joi.number().required(),
+  emergency_contact_1_email: Joi.string(),
+  emergency_contact_1_contact: Joi.number(),
+  emergency_contact_2_email: Joi.string(),
+  emergency_contact_2_contact: Joi.number(),
 };
 
 const companyFields = {

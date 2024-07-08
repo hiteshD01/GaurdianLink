@@ -42,8 +42,17 @@ const userSchema = new mongoose.Schema({
   radius: {
     type: Number,
   },
-  contacts: {
-    type: Array,
+  emergency_contact_1_email: {
+    type: String,
+  },
+  emergency_contact_1_contact: {
+    type: Number,
+  },
+  emergency_contact_2_email: {
+    type: String,
+  },
+  emergency_contact_2_contact: {
+    type: Number,
   },
   hardware_status: {
     type: String,
