@@ -10,10 +10,6 @@ router.post(
   authorizeRoles("super_admin"),
   termsAndConditionsController.createOrReplaceTermsAndConditions
 );
-router.get(
-  "/",
-  authorizeRoles("driver", "company", "super_admin"),
-  termsAndConditionsController.getTermsAndConditions
-);
+router.get("/", termsAndConditionsController.getTermsAndConditions);
 
 module.exports = router;

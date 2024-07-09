@@ -10,10 +10,6 @@ router.post(
   authorizeRoles("super_admin"),
   privacyPolicyController.createOrReplacePrivacyPolicy
 );
-router.get(
-  "/",
-  authorizeRoles("driver", "company", "super_admin"),
-  privacyPolicyController.getPrivacyPolicy
-);
+router.get("/", privacyPolicyController.getPrivacyPolicy);
 
 module.exports = router;
