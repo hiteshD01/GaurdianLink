@@ -23,6 +23,7 @@ const privacyPolicyRoutes = require("./routes/privacyPolicyRoutes");
 const vehicleRouters = require("./routes/vehicleRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const locationRoutes = require("./routes/locationRoutes");
+const contactSupportRoutes = require("./routes/contactSupportRoutes");
 
 app.get("/", (req, res) => {
   res.send("Hey there!! Welcome to Gaurdian Link APIs");
@@ -35,6 +36,7 @@ app.use("/api/privacy-policy", privacyPolicyRoutes);
 app.use("/api/vehicle", vehicleRouters);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/location", locationRoutes);
+app.use("/api/contact-support", contactSupportRoutes);
 
 passport.use(
   new GoogleStrategy(
@@ -81,7 +83,7 @@ app.use(
 
 app.use(passport.initialize());
 app.use(passport.session());
-//routes
+
 app.get(
   "/login/google",
   passport.authenticate("google", { scope: ["profile email"] })
