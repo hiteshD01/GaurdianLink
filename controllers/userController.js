@@ -84,7 +84,7 @@ exports.login = async (req, res) => {
       accessToken,
       refreshToken,
       user,
-      vehicles: vehicles || [],
+      vehicles: [vehicles] || [],
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -106,10 +106,6 @@ exports.getUserByRole = async (req, res) => {
   }
 };
 
-function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required" });
@@ -117,45 +113,47 @@ exports.forgotPassword = async (req, res) => {
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ message: "User not found" });
 
-  const otp = generateOTP();
+  const resetToken = jwt.sign(
+    { _id: user._id, email: user.email },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
 
-  user.resetPasswordOTP = otp;
-  user.resetPasswordExpires = Date.now() + 3600000;
-  await user.save();
+  const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
 
   try {
-    await sendOTP(email, otp);
-    res
-      .status(200)
-      .json({ message: "OTP sent to your registered email address" });
+    await sendOTP(
+      email,
+      `Please click the following link to reset your password: ${resetLink}`
+    );
+    res.status(200).json({ message: "Password reset link sent to your email" });
   } catch (err) {
-    res.status(500).json({ message: "Failed to send OTP" });
+    res.status(500).json({ message: "Failed to send reset link" });
   }
 };
 
-exports.verifyOTP = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
-  if (!email || !otp || !newPassword)
+exports.resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword)
     return res
       .status(400)
-      .json({ message: "Email, OTP, and new password are required" });
+      .json({ message: "Token and new password are required" });
 
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  if (user.resetPasswordOTP !== otp || Date.now() > user.resetPasswordExpires)
-    return res.status(400).json({ message: "Invalid or expired OTP" });
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(newPassword, salt);
+    user.password = hashedPassword;
+    await user.save();
 
-  user.password = hashedPassword;
-  user.resetPasswordOTP = undefined;
-  user.resetPasswordExpires = undefined;
-
-  await user.save();
-
-  res.status(200).json({ message: "Password reset successful" });
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(400).json({ message: "Invalid or expired token" });
+  }
 };
 
 exports.getUserById = async (req, res) => {

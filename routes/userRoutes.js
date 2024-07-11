@@ -6,7 +6,7 @@ const authorizeRoles = require("../middlewares/authorizeRoles");
 router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.post("/forgot-password", userController.forgotPassword);
-router.post("/verify-otp", userController.verifyOTP);
+router.post("/reset-password", userController.resetPassword);
 
 router.get(
   "/",
