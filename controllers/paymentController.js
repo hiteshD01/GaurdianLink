@@ -1,18 +1,20 @@
-const axios = require("axios");
-const crypto = require("crypto");
-const Hardware = require("../models/Hardware");
 const Payment = require("../models/Payment");
+const Hardware = require("../models/Hardware");
 
 exports.buyHardware = async (req, res) => {
-  const { item_name, item_price, item_quantity, status } = req.body;
-  const amount = item_price * item_quantity;
+  const { item_quantity, status } = req.body;
+
+  const hardware = await Hardware.find();
+  const { name, price } = hardware[0];
+
+  const amount = price * item_quantity;
 
   try {
     const payment = new Payment({
       user_id: req.user._id,
-      item_name: item_name,
+      item_name: name,
       item_quantity: item_quantity,
-      item_price: item_price,
+      item_price: price,
       total_amount: amount,
       status: status,
     });
@@ -35,16 +37,19 @@ exports.getAllOrders = async (req, res) => {
 };
 
 exports.updateOrder = async (req, res) => {
-  const { item_name, item_price, item_quantity, status } = req.body;
-  const amount = item_price * item_quantity;
+  const { item_quantity, status } = req.body;
+
+  const hardware = await Hardware.find();
+  const { name, price } = hardware[0];
+
+  const amount = price * item_quantity;
 
   const updateData = {
-    // user_id: req.user._id,
-    item_name: item_name,
+    item_name: name,
     item_quantity: item_quantity,
-    item_price: item_price,
+    item_price: price,
     total_amount: amount,
-    status: status,
+    status: status
   };
 
   try {

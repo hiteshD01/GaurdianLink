@@ -6,15 +6,7 @@ const paymentSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
-  item_name: {
-    type: String,
-    required: true,
-  },
   item_quantity: {
-    type: Number,
-    required: true,
-  },
-  item_price: {
     type: Number,
     required: true,
   },
@@ -24,6 +16,7 @@ const paymentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
+    default: "not_received",
     enum: ["received", "cancel", "delivered", "order_received", "not_received"],
   },
   createdAt: {
