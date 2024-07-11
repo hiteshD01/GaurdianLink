@@ -22,7 +22,7 @@ exports.createOrReplaceContactSupport = async (req, res) => {
   }
 };
 
-exports.getPrivacyPolicy = async (req, res) => {
+exports.getContactSupport = async (req, res) => {
   try {
     const contactSupport = await ContactSupport.findOne();
     if (!contactSupport) {

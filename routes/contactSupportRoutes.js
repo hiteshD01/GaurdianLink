@@ -10,6 +10,6 @@ router.post(
   authorizeRoles("super_admin"),
   contactSupport.createOrReplaceContactSupport
 );
-router.get("/", contactSupport.getPrivacyPolicy);
+router.get("/", contactSupport.getContactSupport);
 
 module.exports = router;
