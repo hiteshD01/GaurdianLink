@@ -4,10 +4,18 @@ const password = Joi.string().min(6).required();
 const mobile_no = Joi.number().required();
 const address = Joi.string().required();
 const role = Joi.string().required();
+const type = Joi.string().valid("email_pass", "google", "facebook").required();
+const uid = Joi.when('type', {
+  is: Joi.string().valid("google", "facebook"),
+  then: Joi.string().required(),
+  otherwise: Joi.string().allow(''),
+});
 
 const commonFields = {
   email,
   password,
+  type,
+  uid,
 };
 
 const driverFields = {

@@ -26,6 +26,13 @@ const userSchema = new mongoose.Schema({
     enum: ["driver", "company", "super_admin"],
     required: true,
   },
+  type: {
+    type: String,
+    enum: ["email_pass", "google", "facebook"],
+  },
+  uid: {
+    type: String,
+  },
   company_name: {
     type: String,
   },

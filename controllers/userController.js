@@ -5,6 +5,7 @@ const { sendOTP } = require("../utils/smsService");
 const { registerValidation, loginValidation } = require("../utils/validation");
 const Vehicle = require("../models/Vehicle");
 
+
 exports.register = async (req, res) => {
   const { error } = registerValidation(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });
@@ -21,9 +22,16 @@ exports.register = async (req, res) => {
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+  let uid = "";
+  if (req.body.type === "google" || req.body.type === "facebook") {
+    uid = req.body.uid || "";
+  }
+
   const user = new User({
     ...req.body,
     password: hashedPassword,
+    uid,
     access_token: jwt.sign(
       { _id: req.body.email, role: req.body.role },
       process.env.JWT_SECRET,
@@ -46,6 +54,7 @@ exports.register = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 exports.login = async (req, res) => {
   const { error } = loginValidation(req.body);
@@ -70,12 +79,12 @@ exports.login = async (req, res) => {
     const accessToken = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN }
     );
     const refreshToken = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.REFRESH_JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
     );
 
     const vehicles = await Vehicle.find({ user_id: user._id });
@@ -90,6 +99,40 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.checkLogin = async (req, res) => {
+  const { email, uid } = req.body;
+
+  if (!email || !uid) {
+    return res.status(400).json({ message: "Email and UID are required" });
+  }
+
+  const user = await User.findOne({ email, uid });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const accessToken = jwt.sign(
+    { _id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN }
+  );
+  const refreshToken = jwt.sign(
+    { _id: user._id, role: user.role },
+    process.env.REFRESH_JWT_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+  );
+
+  const vehicles = await Vehicle.find({ user_id: user._id });
+
+  res.header("authorization", accessToken).json({
+    accessToken,
+    refreshToken,
+    user,
+    vehicles: [vehicles] || [],
+  });
+};
+
 
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
