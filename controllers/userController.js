@@ -101,7 +101,7 @@ exports.login = async (req, res) => {
 };
 
 exports.checkLogin = async (req, res) => {
-  const { email, uid } = req.body;
+  const { email, uid, fcm_token } = req.body;
 
   if (!email || !uid) {
     return res.status(400).json({ message: "Email and UID are required" });
@@ -112,27 +112,35 @@ exports.checkLogin = async (req, res) => {
     return res.status(404).json({ message: "User not found" });
   }
 
-  const accessToken = jwt.sign(
-    { _id: user._id, role: user.role },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
-  const refreshToken = jwt.sign(
-    { _id: user._id, role: user.role },
-    process.env.REFRESH_JWT_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-  );
+  if (fcm_token) {
+    user.fcm_token = fcm_token;
+  }
 
-  const vehicles = await Vehicle.find({ user_id: user._id });
+  try {
+    await user.save();
+    const accessToken = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+    const refreshToken = jwt.sign(
+      { _id: user._id, role: user.role },
+      process.env.REFRESH_JWT_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+    );
 
-  res.header("authorization", accessToken).json({
-    accessToken,
-    refreshToken,
-    user,
-    vehicles: [vehicles] || [],
-  });
+    const vehicles = await Vehicle.find({ user_id: user._id });
+
+    res.header("authorization", accessToken).json({
+      accessToken,
+      refreshToken,
+      user,
+      vehicles: [vehicles] || [],
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
-
 
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
