@@ -26,6 +26,9 @@ const userSchema = new mongoose.Schema({
     enum: ["driver", "company", "super_admin"],
     required: true,
   },
+  profileImage: {
+    type: String,
+  },
   type: {
     type: String,
     enum: ["email_pass", "google", "facebook"],
@@ -107,3 +110,4 @@ const userSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("User", userSchema);
+

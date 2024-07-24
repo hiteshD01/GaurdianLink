@@ -4,57 +4,130 @@ const User = require("../models/User");
 const { sendOTP } = require("../utils/smsService");
 const { registerValidation, loginValidation } = require("../utils/validation");
 const Vehicle = require("../models/Vehicle");
-
+const upload = require("../config/multerConfig");
+const { uploadImageToAzure } = require("../utils/azureBlobService");
 
 exports.register = async (req, res) => {
-  const { error } = registerValidation(req.body);
-  if (error) return res.status(400).json({ message: error.details[0].message });
+  upload.single("profileImage")(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
 
-  const emailExists = await User.findOne({ email: req.body.email });
-  if (emailExists)
-    return res.status(400).json({ message: "Email already exists" });
+    const { error } = registerValidation(req.body);
+    if (error)
+      return res.status(400).json({ message: error.details[0].message });
 
-  if (req.body.role === "driver") {
-    const usernameExists = await User.findOne({ username: req.body.username });
-    if (usernameExists)
-      return res.status(400).json({ message: "Username already exists" });
-  }
+    const emailExists = await User.findOne({ email: req.body.email });
+    if (emailExists)
+      return res.status(400).json({ message: "Email already exists" });
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(req.body.password, salt);
+    if (req.body.role === "driver") {
+      const usernameExists = await User.findOne({
+        username: req.body.username,
+      });
+      if (usernameExists)
+        return res.status(400).json({ message: "Username already exists" });
+    }
 
-  let uid = "";
-  if (req.body.type === "google" || req.body.type === "facebook") {
-    uid = req.body.uid || "";
-  }
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password, salt);
 
-  const user = new User({
-    ...req.body,
-    password: hashedPassword,
-    uid,
-    access_token: jwt.sign(
-      { _id: req.body.email, role: req.body.role },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "1h",
+    let uid = "";
+    if (req.body.type === "google" || req.body.type === "facebook") {
+      uid = req.body.uid || "";
+    }
+
+    let profileImageUrl = "";
+    if (req.file) {
+      try {
+        const timestamp = Date.now();
+        const fileName = `profile-images/${timestamp}-${req.file.originalname}`;
+        profileImageUrl = await uploadImageToAzure(req.file.buffer, fileName);
+      } catch (uploadError) {
+        return res.status(500).json({
+          message: "Failed to upload image to Azure Blob Storage",
+          error: uploadError.message,
+        });
       }
-    ),
-    refresh_token: jwt.sign(
-      { _id: req.body.email, role: req.body.role },
-      process.env.REFRESH_JWT_SECRET,
-      { expiresIn: "7d" }
-    ),
-  });
+    }
 
-  try {
-    const savedUser = await user.save();
-    const vehicle = await Vehicle.find({ user_id: savedUser._id });
-    res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+    const user = new User({
+      ...req.body,
+      password: hashedPassword,
+      uid,
+      profileImage: profileImageUrl,
+      access_token: jwt.sign(
+        { _id: req.body.email, role: req.body.role },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: process.env.JWT_EXPIRES_IN,
+        }
+      ),
+      refresh_token: jwt.sign(
+        { _id: req.body.email, role: req.body.role },
+        process.env.REFRESH_JWT_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      ),
+    });
+
+    try {
+      const savedUser = await user.save();
+      const vehicle = await Vehicle.find({ user_id: savedUser._id });
+      res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  });
 };
 
+// exports.register = async (req, res) => {
+//   const { error } = registerValidation(req.body);
+//   if (error) return res.status(400).json({ message: error.details[0].message });
+
+//   const emailExists = await User.findOne({ email: req.body.email });
+//   if (emailExists)
+//     return res.status(400).json({ message: "Email already exists" });
+
+//   if (req.body.role === "driver") {
+//     const usernameExists = await User.findOne({ username: req.body.username });
+//     if (usernameExists)
+//       return res.status(400).json({ message: "Username already exists" });
+//   }
+
+//   const salt = await bcrypt.genSalt(10);
+//   const hashedPassword = await bcrypt.hash(req.body.password, salt);
+
+//   let uid = "";
+//   if (req.body.type === "google" || req.body.type === "facebook") {
+//     uid = req.body.uid || "";
+//   }
+
+//   const user = new User({
+//     ...req.body,
+//     password: hashedPassword,
+//     uid,
+//     access_token: jwt.sign(
+//       { _id: req.body.email, role: req.body.role },
+//       process.env.JWT_SECRET,
+//       {
+//         expiresIn: "1h",
+//       }
+//     ),
+//     refresh_token: jwt.sign(
+//       { _id: req.body.email, role: req.body.role },
+//       process.env.REFRESH_JWT_SECRET,
+//       { expiresIn: "7d" }
+//     ),
+//   });
+
+//   try {
+//     const savedUser = await user.save();
+//     const vehicle = await Vehicle.find({ user_id: savedUser._id });
+//     res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
+//   } catch (err) {
+//     res.status(400).json({ message: err.message });
+//   }
+// };
 
 exports.login = async (req, res) => {
   const { error } = loginValidation(req.body);
@@ -259,3 +332,5 @@ exports.deleteUserById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
