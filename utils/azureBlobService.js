@@ -17,12 +17,16 @@ const blobServiceClient = new BlobServiceClient(
 const uploadImageToAzure = async (buffer, fileName) => {
   const containerClient = blobServiceClient.getContainerClient(containerName);
   const blockBlobClient = containerClient.getBlockBlobClient(fileName);
-  await blockBlobClient.uploadData(buffer);
+
+  await blockBlobClient.uploadData(buffer, {
+    blobHTTPHeaders: {
+      blobContentType: "image/jpeg",
+    },
+  });
+
   return blockBlobClient.url;
 };
 
 module.exports = {
   uploadImageToAzure,
 };
-
-
