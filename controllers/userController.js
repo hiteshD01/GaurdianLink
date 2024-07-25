@@ -166,7 +166,7 @@ exports.login = async (req, res) => {
       accessToken,
       refreshToken,
       user,
-      vehicles: [vehicles] || [],
+      vehicles: vehicles || [],
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
