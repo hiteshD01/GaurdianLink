@@ -296,24 +296,68 @@ exports.getUserById = async (req, res) => {
 };
 
 exports.updateUserById = async (req, res) => {
-  const userId = req.params.id;
-  const updates = req.body;
-  try {
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+  upload.single("profileImage")(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
     }
 
-    Object.keys(updates).forEach((key) => {
-      user[key] = updates[key];
-    });
+    const userId = req.params.id;
+    const updates = req.body;
 
-    const updatedUser = await user.save();
-    res.status(200).json(updatedUser);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (req.file) {
+        try {
+          const timestamp = Date.now();
+          const fileName = `profile-images/${timestamp}-${req.file.originalname}`;
+          const profileImageUrl = await uploadImageToAzure(
+            req.file.buffer,
+            fileName
+          );
+          user.profileImage = profileImageUrl;
+        } catch (uploadError) {
+          return res.status(500).json({
+            message: "Failed to upload image to Azure Blob Storage",
+            error: uploadError.message,
+          });
+        }
+      }
+
+      Object.keys(updates).forEach((key) => {
+        user[key] = updates[key];
+      });
+
+      const updatedUser = await user.save();
+      res.status(200).json(updatedUser);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
+    }
+  });
 };
+
+// exports.updateUserById = async (req, res) => {
+//   const userId = req.params.id;
+//   const updates = req.body;
+//   try {
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     Object.keys(updates).forEach((key) => {
+//       user[key] = updates[key];
+//     });
+
+//     const updatedUser = await user.save();
+//     res.status(200).json(updatedUser);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
 
 exports.deleteUserById = async (req, res) => {
   const userId = req.params.id;
@@ -332,5 +376,3 @@ exports.deleteUserById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-

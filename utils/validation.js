@@ -10,12 +10,14 @@ const uid = Joi.when('type', {
   then: Joi.string().required(),
   otherwise: Joi.string().allow(''),
 });
+const profileImage = Joi.string().required();
 
 const commonFields = {
   email,
   password,
   type,
   uid,
+  profileImage
 };
 
 const driverFields = {
