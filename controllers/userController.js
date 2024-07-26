@@ -208,7 +208,7 @@ exports.checkLogin = async (req, res) => {
       accessToken,
       refreshToken,
       user,
-      vehicles: [vehicles] || [],
+      vehicles: vehicles || [],
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -339,25 +339,6 @@ exports.updateUserById = async (req, res) => {
   });
 };
 
-// exports.updateUserById = async (req, res) => {
-//   const userId = req.params.id;
-//   const updates = req.body;
-//   try {
-//     const user = await User.findById(userId);
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     Object.keys(updates).forEach((key) => {
-//       user[key] = updates[key];
-//     });
-
-//     const updatedUser = await user.save();
-//     res.status(200).json(updatedUser);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// };
 
 exports.deleteUserById = async (req, res) => {
   const userId = req.params.id;
