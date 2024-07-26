@@ -1,5 +1,6 @@
 const axios = require("axios");
 const Location = require("../models/Location");
+// const { default: createMessage } = require("../utils/smsService");
 
 exports.createSOS = async (req, res) => {
   const { lat, long, address, type, fcmToken } = req.body;
@@ -30,7 +31,7 @@ exports.createSOS = async (req, res) => {
           click_action: "FLUTTER_NOTIFICATION_CLICK",
         },
       };
-      
+
       const response = await axios.post(
         "https://fcm.googleapis.com/fcm/send",
         notificationPayload,
@@ -48,6 +49,28 @@ exports.createSOS = async (req, res) => {
         console.error("Failed to send notification", response.data);
       }
     }
+
+    // // Fetch the user's emergency contacts
+    // const user = await User.findById(req.user._id).select(
+    //   "emergency_contact_1_contact emergency_contact_2_contact"
+    // );
+
+    // if (user) {
+    //   const emergencyContacts = [
+    //     user.emergency_contact_1_contact,
+    //     user.emergency_contact_2_contact,
+    //   ];
+
+    //   const alertMessage = "This is an alert message from the SOS system.";
+
+    //   // Send SMS to each emergency contact
+    //   for (const contact of emergencyContacts) {
+    //     if (contact) {
+    //       await createMessage(alertMessage, contact);
+    //     }
+    //   }
+    // }
+
     res.status(201).json(savedLocation);
   } catch (err) {
     res.status(400).json({ message: err.message });

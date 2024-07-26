@@ -1,28 +1,17 @@
-const nodemailer = require("nodemailer");
+// const twilio = require("twilio");
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASSWORD,
-  },
-});
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const client = twilio(accountSid, authToken);
 
-const sendOTP = async (email, otp) => {
-  const mailOptions = {
-    from: process.env.EMAIL,
-    to: email,
-    subject: "Your OTP Code",
-    text: `Your OTP code is ${otp}`,
-  };
+// const createMessage = async ({ msg, to }) => {
+//   const message = await client.messages.create({
+//     body: msg,
+//     from: "+15017122661",
+//     to: to,
+//   });
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log("OTP sent: " + info.response);
-  } catch (error) {
-    console.error("Error sending OTP: ", error);
-    throw new Error("Failed to send OTP");
-  }
-};
+//   console.log(message.body);
+// };
 
-module.exports = { sendOTP };
+// module.exports = createMessage;
