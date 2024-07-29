@@ -6,13 +6,21 @@ const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const session = require("express-session");
+const cors = require("cors");
 
 dotenv.config();
 
 connectDB();
 
 const app = express();
+const corsOptions = {
+  origin: "*",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
 
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
 

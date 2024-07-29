@@ -7,7 +7,7 @@ router.post("/register", userController.register);
 router.post("/login", userController.login);
 router.post("/check-login", userController.checkLogin);
 router.post("/forgot-password", userController.forgotPassword);
-router.post("/reset-password", userController.resetPassword);
+router.post("/reset-password/:token", userController.resetPassword);
 
 router.get(
   "/",

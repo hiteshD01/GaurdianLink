@@ -1,11 +1,11 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-const { sendOTP } = require("../utils/smsService");
 const { registerValidation, loginValidation } = require("../utils/validation");
 const Vehicle = require("../models/Vehicle");
 const upload = require("../config/multerConfig");
 const { uploadImageToAzure } = require("../utils/azureBlobService");
+const { setresetPasswordMail } = require("../utils/resetPasswordService");
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -244,12 +244,8 @@ exports.forgotPassword = async (req, res) => {
   );
 
   const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
-
   try {
-    await sendOTP(
-      email,
-      `Please click the following link to reset your password: ${resetLink}`
-    );
+    await setresetPasswordMail(email, resetLink);
     res.status(200).json({ message: "Password reset link sent to your email" });
   } catch (err) {
     res.status(500).json({ message: "Failed to send reset link" });
@@ -257,7 +253,9 @@ exports.forgotPassword = async (req, res) => {
 };
 
 exports.resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { newPassword } = req.body;
+  const token = req.params.token;
+
   if (!token || !newPassword)
     return res
       .status(400)
@@ -338,7 +336,6 @@ exports.updateUserById = async (req, res) => {
     }
   });
 };
-
 
 exports.deleteUserById = async (req, res) => {
   const userId = req.params.id;
