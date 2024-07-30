@@ -96,8 +96,22 @@ exports.createSOS = async (req, res) => {
 // };
 
 exports.getAllLocations = async (req, res) => {
+  const { start_date, end_date } = req.query;
+
+  let filter = {};
+
+  if (start_date && end_date) {
+    filter.createdAt = {
+      $gte: new Date(start_date),
+      $lte: new Date(end_date),
+    };
+  }
+
   try {
-    const locations = await Location.find().populate("user_id", "-password");
+    const locations = await Location.find(filter).populate(
+      "user_id",
+      "-password"
+    );
     res.status(200).json(locations);
   } catch (err) {
     res.status(500).json({ message: err.message });
