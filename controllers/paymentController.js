@@ -1,27 +1,14 @@
 const Payment = require("../models/Payment");
 const Hardware = require("../models/Hardware");
 
-exports.buyHardware = async (req, res) => {
-  const { item_quantity, status } = req.body;
-
-  const hardware = await Hardware.find();
-  const { name, price } = hardware[0];
-
-  const amount = price * item_quantity;
-
+exports.buyHardware = (req, res) => {
+  const { item_quantity, address, access_token } = req.body;
   try {
-    const payment = new Payment({
-      user_id: req.user._id,
-      item_name: name,
-      item_quantity: item_quantity,
-      item_price: price,
-      total_amount: amount,
-      status: status,
-    });
+    const paymentUrl = `https://gaurdianlink-admin.netlify.app/request-hardware?qty=${item_quantity}&address=${encodeURIComponent(
+      address
+    )}&token=${access_token}`;
 
-    await payment.save();
-
-    res.status(200).json(payment);
+    res.status(200).json({ paymentUrl: paymentUrl });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -49,7 +36,7 @@ exports.updateOrder = async (req, res) => {
     item_quantity: item_quantity,
     item_price: price,
     total_amount: amount,
-    status: status
+    status: status,
   };
 
   try {
