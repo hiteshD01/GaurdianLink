@@ -5,6 +5,13 @@ const verifyToken = require("../middlewares/auth");
 const authorizeRoles = require("../middlewares/authorizeRoles");
 
 router.post(
+  "/payment-success",
+  verifyToken,
+  authorizeRoles("driver", "company", "super_admin"),
+  paymentController.paymentSuccess
+);
+
+router.post(
   "/buy-hardware",
   verifyToken,
   authorizeRoles("driver", "company", "super_admin"),

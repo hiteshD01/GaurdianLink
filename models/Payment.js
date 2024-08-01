@@ -19,6 +19,10 @@ const paymentSchema = new mongoose.Schema({
     default: "not_received",
     enum: ["received", "cancel", "delivered", "order_received", "not_received"],
   },
+  delivery_address: {
+    type: String,
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

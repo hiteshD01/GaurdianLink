@@ -1,12 +1,63 @@
 const Payment = require("../models/Payment");
 const Hardware = require("../models/Hardware");
+const User = require("../models/User");
 
-exports.buyHardware = (req, res) => {
-  const { item_quantity, address, access_token } = req.body;
+exports.paymentSuccess = async (req, res) => {
+  const { item_quantity, total_amount, status, delivery_address } = req.body;
+  const user_id = req.user._id;
+
   try {
+    const newPayment = new Payment({
+      user_id,
+      item_quantity,
+      total_amount,
+      status,
+      delivery_address,
+    });
+
+    await newPayment.save();
+
+    res
+      .status(201)
+      .json({ message: "Payment recorded successfully", payment: newPayment });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// exports.buyHardware = async (req, res) => {
+//   const { item_quantity, address, access_token } = req.body;
+//   const user = await User.findById(req.user._id);
+//   try {
+//     const paymentUrl = `https://gaurdianlink-admin.netlify.app/request-hardware?qty=${item_quantity}&address=${encodeURIComponent(
+//       address
+//     )}&token=${access_token}&username=${user.username}`;
+
+//     res.status(200).json({ paymentUrl: paymentUrl });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+exports.buyHardware = async (req, res) => {
+  const { item_quantity, address, access_token } = req.body;
+  const user = await User.findById(req.user._id);
+
+  try {
+    // Fetch the hardware details
+    const hardware = await Hardware.findOne();
+    if (!hardware) {
+      return res.status(404).json({ message: "Hardware not found" });
+    }
+
+    const { name, price } = hardware;
+
+    // Construct the payment URL with additional parameters
     const paymentUrl = `https://gaurdianlink-admin.netlify.app/request-hardware?qty=${item_quantity}&address=${encodeURIComponent(
       address
-    )}&token=${access_token}`;
+    )}&token=${access_token}&username=${
+      user.username
+    }&product=${encodeURIComponent(name)}&price=${price}`;
 
     res.status(200).json({ paymentUrl: paymentUrl });
   } catch (err) {
