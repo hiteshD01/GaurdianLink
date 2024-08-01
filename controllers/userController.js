@@ -80,55 +80,6 @@ exports.register = async (req, res) => {
   });
 };
 
-// exports.register = async (req, res) => {
-//   const { error } = registerValidation(req.body);
-//   if (error) return res.status(400).json({ message: error.details[0].message });
-
-//   const emailExists = await User.findOne({ email: req.body.email });
-//   if (emailExists)
-//     return res.status(400).json({ message: "Email already exists" });
-
-//   if (req.body.role === "driver") {
-//     const usernameExists = await User.findOne({ username: req.body.username });
-//     if (usernameExists)
-//       return res.status(400).json({ message: "Username already exists" });
-//   }
-
-//   const salt = await bcrypt.genSalt(10);
-//   const hashedPassword = await bcrypt.hash(req.body.password, salt);
-
-//   let uid = "";
-//   if (req.body.type === "google" || req.body.type === "facebook") {
-//     uid = req.body.uid || "";
-//   }
-
-//   const user = new User({
-//     ...req.body,
-//     password: hashedPassword,
-//     uid,
-//     access_token: jwt.sign(
-//       { _id: req.body.email, role: req.body.role },
-//       process.env.JWT_SECRET,
-//       {
-//         expiresIn: "1h",
-//       }
-//     ),
-//     refresh_token: jwt.sign(
-//       { _id: req.body.email, role: req.body.role },
-//       process.env.REFRESH_JWT_SECRET,
-//       { expiresIn: "7d" }
-//     ),
-//   });
-
-//   try {
-//     const savedUser = await user.save();
-//     const vehicle = await Vehicle.find({ user_id: savedUser._id });
-//     res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
-//   } catch (err) {
-//     res.status(400).json({ message: err.message });
-//   }
-// };
-
 exports.login = async (req, res) => {
   const { error } = loginValidation(req.body);
   if (error) return res.status(400).json({ message: error.details[0].message });

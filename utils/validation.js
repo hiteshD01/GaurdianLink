@@ -1,14 +1,15 @@
 const Joi = require("@hapi/joi");
+
 const email = Joi.string().min(6).required().email();
 const password = Joi.string().min(6).required();
 const mobile_no = Joi.number().required();
 const address = Joi.string().required();
 const role = Joi.string().required();
 const type = Joi.string().valid("email_pass", "google", "facebook").required();
-const uid = Joi.when('type', {
+const uid = Joi.when("type", {
   is: Joi.string().valid("google", "facebook"),
   then: Joi.string().required(),
-  otherwise: Joi.string().allow(''),
+  otherwise: Joi.string().allow(""),
 });
 const profileImage = Joi.string();
 
@@ -17,7 +18,7 @@ const commonFields = {
   password,
   type,
   uid,
-  profileImage
+  // profileImage
 };
 
 const driverFields = {
@@ -35,7 +36,8 @@ const driverFields = {
   emergency_contact_1_contact: Joi.number(),
   emergency_contact_2_email: Joi.string(),
   emergency_contact_2_contact: Joi.number(),
-  fcm_token: Joi.string().required(),
+  fcm_token: Joi.string(),
+  profileImage,
 };
 
 const companyFields = {
@@ -46,6 +48,7 @@ const companyFields = {
   address,
   id_no: Joi.number().required(),
   role: role.valid("company"),
+  profileImage,
 };
 
 const superAdminFields = {
@@ -55,6 +58,7 @@ const superAdminFields = {
   mobile_no,
   address,
   role: role.valid("super_admin"),
+  profileImage,
 };
 
 const schemas = {
@@ -68,6 +72,12 @@ const registerValidation = (data) => {
   if (!schema) {
     return { error: { details: [{ message: "Invalid role" }] } };
   }
+
+  // Conditionally add fcm_token for driver role
+  if (data.role === "driver") {
+    schema.fcm_token = Joi.string().required();
+  }
+
   return schema.validate(data);
 };
 

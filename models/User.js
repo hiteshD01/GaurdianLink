@@ -88,7 +88,7 @@ const userSchema = new mongoose.Schema({
   },
   fcm_token: {
     type: String,
-    required: true,
+    // required: true,
   },
   access_token: {
     type: String,
