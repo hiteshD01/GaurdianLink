@@ -2,8 +2,8 @@ const Joi = require("@hapi/joi");
 
 const email = Joi.string().min(6).required().email();
 const password = Joi.string().min(6).required();
-const mobile_no = Joi.number().required();
-const address = Joi.string().required();
+const mobile_no = Joi.number();
+const address = Joi.string();
 const role = Joi.string().required();
 const type = Joi.string().valid("email_pass", "google", "facebook").required();
 const uid = Joi.when("type", {
@@ -38,6 +38,8 @@ const driverFields = {
   emergency_contact_2_contact: Joi.number(),
   fcm_token: Joi.string(),
   profileImage,
+  mobile_no,
+  address
 };
 
 const companyFields = {
