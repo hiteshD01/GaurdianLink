@@ -6,6 +6,7 @@ const Vehicle = require("../models/Vehicle");
 const upload = require("../config/multerConfig");
 const { uploadImageToAzure } = require("../utils/azureBlobService");
 const { setresetPasswordMail } = require("../utils/resetPasswordService");
+const Location = require("../models/Location");
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -172,14 +173,32 @@ exports.getUserByRole = async (req, res) => {
 
   try {
     const users = await User.find({ role });
-    if (!users.length)
-      return res.status(404).json({ message: "No users found with this role" });
+    if (!users.length) return res.status(404).json({ message: "No users found with this role" });
 
-    res.status(200).json(users);
+    let response = { users };
+
+    if (role === "driver") {
+      // Total active drivers
+      const totalActiveDrivers = await Location.countDocuments({ type: "sos" });
+
+      // Total active drivers this month
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const totalActiveDriversThisMonth = await Location.countDocuments({
+        type: "sos",
+        createdAt: { $gte: startOfMonth }
+      });
+
+      response.totalActiveDrivers = totalActiveDrivers;
+      response.totalActiveDriversThisMonth = totalActiveDriversThisMonth;
+    }
+
+    res.status(200).json(response);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
