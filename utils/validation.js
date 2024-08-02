@@ -39,7 +39,8 @@ const driverFields = {
   fcm_token: Joi.string(),
   profileImage,
   mobile_no,
-  address
+  address,
+  company_name: Joi.string()
 };
 
 const companyFields = {
@@ -51,6 +52,7 @@ const companyFields = {
   id_no: Joi.number().required(),
   role: role.valid("company"),
   profileImage,
+  contact_name: Joi.string()
 };
 
 const superAdminFields = {
