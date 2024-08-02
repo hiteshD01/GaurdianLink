@@ -177,7 +177,8 @@ exports.getRecentSosLocations = async (req, res) => {
 
 exports.getHotspots = async (req, res) => {
   try {
-    const locations = await Location.aggregate([
+    const hotspots = await Location.aggregate([
+      { $match: { type: "sos" } }, // Ensure we're only looking at SOS type locations
       {
         $group: {
           _id: { lat: "$lat", long: "$long", address: "$address" },
@@ -188,8 +189,25 @@ exports.getHotspots = async (req, res) => {
         $sort: { count: -1 },
       },
     ]);
-    res.status(200).json(locations);
+
+    if (hotspots.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const topCount = hotspots[0].count;
+
+    const hotspotsWithPercentage = hotspots.map(hotspot => ({
+      lat: hotspot._id.lat,
+      long: hotspot._id.long,
+      address: hotspot._id.address,
+      percentage: ((hotspot.count / topCount) * 100).toFixed(2),
+      timesCalled: hotspot.count,
+    }));
+
+    res.status(200).json(hotspotsWithPercentage);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
+

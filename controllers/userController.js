@@ -253,6 +253,8 @@ exports.updateUserById = async (req, res) => {
     const userId = req.params.id;
     const updates = req.body;
 
+    delete updates.password;
+
     try {
       const user = await User.findById(userId);
       if (!user) {
