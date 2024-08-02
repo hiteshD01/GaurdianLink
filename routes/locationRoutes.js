@@ -7,7 +7,9 @@ const authorizeRoles = require("../middlewares/authorizeRoles");
 const authorized = [verifyToken, authorizeRoles("driver", "company", "super_admin")];
 
 router.post("/sos", authorized, locationController.createSOS);
-router.get("/", authorized, locationController.getAllLocations);
+router.get("/", authorized, locationController.getLocationsByUser);
+router.get("/sos-location", authorized, locationController.getAllLocations);
 router.get("/hotspot", authorized, locationController.getHotspots);
+router.get('/recent-sos-locations', locationController.getRecentSosLocations);
 
 module.exports = router;

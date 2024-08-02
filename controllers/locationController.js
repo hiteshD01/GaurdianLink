@@ -95,10 +95,13 @@ exports.createSOS = async (req, res) => {
 //   }
 // };
 
-exports.getAllLocations = async (req, res) => {
+exports.getLocationsByUser = async (req, res) => {
   const { start_date, end_date } = req.query;
 
-  let filter = {};
+  let filter = {
+    user_id: req.user._id, // Filter by logged-in user's ID
+    type: "sos", // Filter by location type "sos"
+  };
 
   if (start_date && end_date) {
     filter.createdAt = {
@@ -113,6 +116,60 @@ exports.getAllLocations = async (req, res) => {
       "-password"
     );
     res.status(200).json(locations);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getAllLocations = async (req, res) => {
+  const { start_date, end_date, type } = req.query;
+
+  let filter = {};
+
+  if (start_date && end_date) {
+    filter.createdAt = {
+      $gte: new Date(start_date),
+      $lte: new Date(end_date),
+    };
+  }
+
+  if (type === "sos") {
+    filter.type = "sos";
+  }
+
+  try {
+    const locations = await Location.find(filter).populate(
+      "user_id",
+      "-password"
+    );
+    res.status(200).json(locations);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.getRecentSosLocations = async (req, res) => {
+  try {
+    const recentSosLocations = await Location.aggregate([
+      { $match: { type: "sos" } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$user_id",
+          mostRecentLocation: { $first: "$$ROOT" },
+        },
+      },
+      { $sort: { "mostRecentLocation.createdAt": -1 } },
+      { $limit: 5 },
+      { $replaceRoot: { newRoot: "$mostRecentLocation" } },
+    ]).exec();
+
+    const populatedLocations = await Location.populate(recentSosLocations, {
+      path: "user_id",
+      select: "-password",
+    });
+
+    res.status(200).json(populatedLocations);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
