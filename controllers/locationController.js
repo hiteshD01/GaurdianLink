@@ -210,4 +210,42 @@ exports.getHotspots = async (req, res) => {
   }
 };
 
+exports.getSosRequestsPerMonth = async (req, res) => {
+  const { start_date, end_date } = req.query;
 
+  if (!start_date || !end_date) {
+    return res.status(400).json({ message: "Start date and end date are required" });
+  }
+
+  try {
+    const sosRequests = await Location.aggregate([
+      { 
+        $match: { 
+          type: "sos",
+          createdAt: {
+            $gte: new Date(start_date),
+            $lte: new Date(end_date),
+          },
+        }
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { "_id": 1 }
+      }
+    ]);
+
+    const result = sosRequests.map(item => ({
+      month: item._id,
+      count: item.count
+    }));
+
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};

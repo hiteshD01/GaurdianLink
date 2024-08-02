@@ -11,5 +11,6 @@ router.get("/", authorized, locationController.getLocationsByUser);
 router.get("/sos-location", authorized, locationController.getAllLocations);
 router.get("/hotspot", authorized, locationController.getHotspots);
 router.get('/recent-sos-locations', locationController.getRecentSosLocations);
+router.get('/sos-month', locationController.getSosRequestsPerMonth);
 
 module.exports = router;
