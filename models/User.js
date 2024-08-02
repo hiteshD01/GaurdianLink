@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
   },
   hardware_status: {
     type: String,
-    enum: ["received", "cancel", "delivered", "order_received"],
+    enum: [ "delivered", "order_received"],
   },
   auto_app_update: {
     type: Number,
