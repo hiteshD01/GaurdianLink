@@ -7,6 +7,8 @@ const upload = require("../config/multerConfig");
 const { uploadImageToAzure } = require("../utils/azureBlobService");
 const { setresetPasswordMail } = require("../utils/resetPasswordService");
 const Location = require("../models/Location");
+const moment = require("moment");
+
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -167,6 +169,7 @@ exports.checkLogin = async (req, res) => {
   }
 };
 
+
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
   if (!role) return res.status(400).json({ message: "Role is required" });
@@ -206,8 +209,39 @@ exports.getUserByRole = async (req, res) => {
         createdAt: { $gte: startOfMonth },
       });
 
+      const today = moment().startOf('day').toDate();
+      const endOfToday = moment().endOf('day').toDate();
+      const yesterday = moment().subtract(1, 'days').startOf('day').toDate();
+      const endOfYesterday = moment().subtract(1, 'days').endOf('day').toDate();
+      const startOfWeek = moment().startOf('week').toDate();
+      const startOfYear = moment().startOf('year').toDate();
+
+      const totalActiveDriversToday = await Location.countDocuments({
+        type: "sos",
+        createdAt: { $gte: today, $lte: endOfToday },
+      });
+
+      const totalActiveDriversYesterday = await Location.countDocuments({
+        type: "sos",
+        createdAt: { $gte: yesterday, $lte: endOfYesterday },
+      });
+
+      const totalActiveDriversThisWeek = await Location.countDocuments({
+        type: "sos",
+        createdAt: { $gte: startOfWeek },
+      });
+
+      const totalActiveDriversThisYear = await Location.countDocuments({
+        type: "sos",
+        createdAt: { $gte: startOfYear },
+      });
+
       response.totalActiveDrivers = totalActiveDrivers;
       response.totalActiveDriversThisMonth = totalActiveDriversThisMonth;
+      response.totalActiveDriversToday = totalActiveDriversToday;
+      response.totalActiveDriversYesterday = totalActiveDriversYesterday;
+      response.totalActiveDriversThisWeek = totalActiveDriversThisWeek;
+      response.totalActiveDriversThisYear = totalActiveDriversThisYear;
     }
 
     res.status(200).json(response);
@@ -215,6 +249,7 @@ exports.getUserByRole = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;

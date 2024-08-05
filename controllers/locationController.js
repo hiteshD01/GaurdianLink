@@ -1,5 +1,6 @@
 const axios = require("axios");
 const Location = require("../models/Location");
+const moment = require("moment");
 // const { default: createMessage } = require("../utils/smsService");
 
 exports.createSOS = async (req, res) => {
@@ -176,9 +177,53 @@ exports.getRecentSosLocations = async (req, res) => {
 };
 
 exports.getHotspots = async (req, res) => {
+  const { type } = req.query;
+
+  let dateRange;
+  const today = moment().startOf("day");
+  const endOfToday = moment().endOf("day");
+
+  switch (type) {
+    case "today":
+      dateRange = { $gte: today.toDate(), $lte: endOfToday.toDate() };
+      break;
+    case "yesterday":
+      const yesterday = today.subtract(1, "days");
+      dateRange = {
+        $gte: yesterday.startOf("day").toDate(),
+        $lte: yesterday.endOf("day").toDate(),
+      };
+      break;
+    case "thisWeek":
+      dateRange = {
+        $gte: today.startOf("week").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    case "thisMonth":
+      dateRange = {
+        $gte: today.startOf("month").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    case "thisYear":
+      dateRange = {
+        $gte: today.startOf("year").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    default:
+      dateRange = null;
+  }
+
   try {
+    let matchCriteria = { type: "sos" };
+    if (dateRange) {
+      matchCriteria.createdAt = dateRange;
+    }
+
     const hotspots = await Location.aggregate([
-      { $match: { type: "sos" } }, // Ensure we're only looking at SOS type locations
+      { $match: matchCriteria },
       {
         $group: {
           _id: { lat: "$lat", long: "$long", address: "$address" },
@@ -196,7 +241,7 @@ exports.getHotspots = async (req, res) => {
 
     const topCount = hotspots[0].count;
 
-    const hotspotsWithPercentage = hotspots.map(hotspot => ({
+    const hotspotsWithPercentage = hotspots.map((hotspot) => ({
       lat: hotspot._id.lat,
       long: hotspot._id.long,
       address: hotspot._id.address,
@@ -214,34 +259,36 @@ exports.getSosRequestsPerMonth = async (req, res) => {
   const { start_date, end_date } = req.query;
 
   if (!start_date || !end_date) {
-    return res.status(400).json({ message: "Start date and end date are required" });
+    return res
+      .status(400)
+      .json({ message: "Start date and end date are required" });
   }
 
   try {
     const sosRequests = await Location.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           type: "sos",
           createdAt: {
             $gte: new Date(start_date),
             $lte: new Date(end_date),
           },
-        }
+        },
       },
       {
         $group: {
           _id: { $month: "$createdAt" },
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
       {
-        $sort: { "_id": 1 }
-      }
+        $sort: { _id: 1 },
+      },
     ]);
 
-    const result = sosRequests.map(item => ({
+    const result = sosRequests.map((item) => ({
       month: item._id,
-      count: item.count
+      count: item.count,
     }));
 
     res.status(200).json(result);
