@@ -66,13 +66,29 @@ exports.buyHardware = async (req, res) => {
 };
 
 exports.getAllOrders = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
   try {
-    const order = await Payment.find().populate("user_id", "-password");
-    res.status(200).json(order);
+    const orders = await Payment.find()
+      .populate("user_id", "-password")
+      .skip(skip)
+      .limit(limit);
+    
+    const totalOrders = await Payment.countDocuments();
+
+    res.status(200).json({
+      orders,
+      totalOrders,
+      page,
+      totalPages: Math.ceil(totalOrders / limit)
+    });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 exports.updateOrder = async (req, res) => {
   const { item_quantity, status } = req.body;

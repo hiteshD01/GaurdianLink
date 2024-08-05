@@ -171,17 +171,22 @@ exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
   if (!role) return res.status(400).json({ message: "Role is required" });
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
   try {
-    const users = await User.find({ role });
+    const users = await User.find({ role, disable: { $ne: true } })
+      .skip(skip)
+      .limit(limit);
     if (!users.length) return res.status(404).json({ message: "No users found with this role" });
 
-    let response = { users };
+    const totalUsers = await User.countDocuments({ role, disable: { $ne: true } });
+
+    let response = { users, totalUsers, page, totalPages: Math.ceil(totalUsers / limit) };
 
     if (role === "driver") {
-      // Total active drivers
       const totalActiveDrivers = await Location.countDocuments({ type: "sos" });
-
-      // Total active drivers this month
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       const totalActiveDriversThisMonth = await Location.countDocuments({
         type: "sos",
@@ -197,8 +202,6 @@ exports.getUserByRole = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
