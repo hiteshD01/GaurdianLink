@@ -179,18 +179,31 @@ exports.getUserByRole = async (req, res) => {
     const users = await User.find({ role, disable: { $ne: true } })
       .skip(skip)
       .limit(limit);
-    if (!users.length) return res.status(404).json({ message: "No users found with this role" });
+    if (!users.length)
+      return res.status(404).json({ message: "No users found with this role" });
 
-    const totalUsers = await User.countDocuments({ role, disable: { $ne: true } });
+    const totalUsers = await User.countDocuments({
+      role,
+      disable: { $ne: true },
+    });
 
-    let response = { users, totalUsers, page, totalPages: Math.ceil(totalUsers / limit) };
+    let response = {
+      users,
+      totalUsers,
+      page,
+      totalPages: Math.ceil(totalUsers / limit),
+    };
 
     if (role === "driver") {
       const totalActiveDrivers = await Location.countDocuments({ type: "sos" });
-      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const startOfMonth = new Date(
+        new Date().getFullYear(),
+        new Date().getMonth(),
+        1
+      );
       const totalActiveDriversThisMonth = await Location.countDocuments({
         type: "sos",
-        createdAt: { $gte: startOfMonth }
+        createdAt: { $gte: startOfMonth },
       });
 
       response.totalActiveDrivers = totalActiveDrivers;
@@ -259,8 +272,9 @@ exports.getUserById = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+    const vehicles = await Vehicle.find({ user_id: user._id });
 
-    res.status(200).json(user);
+    res.status(200).json({ user, vehicle: vehicles || [] });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
