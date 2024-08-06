@@ -49,5 +49,11 @@ router.delete(
   authorizeRoles("driver", "company", "super_admin"),
   userController.deleteUserById
 );
+// router.get(
+//   "/search",
+//   verifyToken,
+//   // authorizeRoles("driver", "company", "super_admin"),
+//   userController.searchUsers
+// );
 
 module.exports = router;

@@ -169,7 +169,6 @@ exports.checkLogin = async (req, res) => {
   }
 };
 
-
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
   if (!role) return res.status(400).json({ message: "Role is required" });
@@ -177,18 +176,27 @@ exports.getUserByRole = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
+  const filter = req.query.filter || '';
 
   try {
-    const users = await User.find({ role, disable: { $ne: true } })
+    // Build the dynamic query object
+    const query = {
+      role,
+      disable: { $ne: true },
+      $or: [
+        { company_name: { $regex: filter, $options: 'i' } },
+        { contact_name: { $regex: filter, $options: 'i' } },
+        { email: { $regex: filter, $options: 'i' } },
+      ]
+    };
+
+    const users = await User.find(query)
       .skip(skip)
       .limit(limit);
     if (!users.length)
       return res.status(404).json({ message: "No users found with this role" });
 
-    const totalUsers = await User.countDocuments({
-      role,
-      disable: { $ne: true },
-    });
+    const totalUsers = await User.countDocuments(query);
 
     let response = {
       users,
@@ -209,12 +217,12 @@ exports.getUserByRole = async (req, res) => {
         createdAt: { $gte: startOfMonth },
       });
 
-      const today = moment().startOf('day').toDate();
-      const endOfToday = moment().endOf('day').toDate();
-      const yesterday = moment().subtract(1, 'days').startOf('day').toDate();
-      const endOfYesterday = moment().subtract(1, 'days').endOf('day').toDate();
-      const startOfWeek = moment().startOf('week').toDate();
-      const startOfYear = moment().startOf('year').toDate();
+      const today = moment().startOf("day").toDate();
+      const endOfToday = moment().endOf("day").toDate();
+      const yesterday = moment().subtract(1, "days").startOf("day").toDate();
+      const endOfYesterday = moment().subtract(1, "days").endOf("day").toDate();
+      const startOfWeek = moment().startOf("week").toDate();
+      const startOfYear = moment().startOf("year").toDate();
 
       const totalActiveDriversToday = await Location.countDocuments({
         type: "sos",
@@ -378,3 +386,100 @@ exports.deleteUserById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+// exports.searchUsers = async (req, res) => {
+//   const { keyword } = req.query;
+
+//   if (!keyword) {
+//     return res.status(400).json({ message: "Keyword is required" });
+//   }
+
+//   try {
+//     const regex = new RegExp(keyword, 'i'); // Case-insensitive search
+//     const users = await User.find({
+//       $or: [
+//         { username: { $regex: regex } },
+//         { companyName: { $regex: regex } },
+//         { mobile_no: { $regex: regex } },
+//         { address: { $regex: regex } },
+//         { contact_name: { $regex: regex } }
+//       ],
+//       disable: { $ne: true }
+//     });
+
+//     res.status(200).json({ users });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// };
+
+
+// exports.searchUsers = async (req, res) => {
+//   console.log("query", req.query);
+//   const { keyword } = req.query;
+
+//   if (!keyword) {
+//     return res.status(400).json({ message: "Keyword is required" });
+//   }
+
+//   try {
+//     // Use regex for case-insensitive partial matches
+//     const regex = new RegExp(keyword, "i");
+
+//     const users = await User.find({
+//       $or: [
+//         { username: regex },
+//         { company_name: regex }, // Assuming you have a field 'company' for company name
+//         { mobile_no: regex },
+//         { address: regex },
+//         { contact_name: regex },
+//       ],
+//       disable: { $ne: true },
+//     });
+
+//     res.status(200).json(users);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+
+//   // const { keyword, page = 1, limit = 10 } = req.query;
+//   // const skip = (page - 1) * limit;
+
+//   // if (!keyword) {
+//   //   return res.status(400).json({ message: "Keyword is required" });
+//   // }
+
+//   // try {
+//   //   // Log incoming parameters for debugging
+//   //   console.log(`Searching for keyword: ${keyword}`);
+
+//   //   // Construct the search query
+//   //   const searchQuery = {
+//   //     $or: [
+//   //       { username: { $regex: keyword, $options: "i" } },
+//   //       { company_name: { $regex: keyword, $options: "i" } },
+//   //       { mobile_no: { $regex: keyword, $options: "i" } },
+//   //       { address: { $regex: keyword, $options: "i" } },
+//   //       { contact_name: { $regex: keyword, $options: "i" } },
+//   //     ],
+//   //   };
+
+//   //   // Fetch the users based on the search query
+//   //   const users = await User.find(searchQuery)
+//   //     .skip(skip)
+//   //     .limit(parseInt(limit));
+
+//   //   const totalUsers = await User.countDocuments(searchQuery);
+
+//   //   res.status(200).json({
+//   //     users,
+//   //     totalUsers,
+//   //     page: parseInt(page),
+//   //     totalPages: Math.ceil(totalUsers / limit),
+//   //   });
+//   // } catch (err) {
+//   //   console.error("Error during user search:", err);
+//   //   res.status(500).json({ message: err.message });
+//   // }
+// };
