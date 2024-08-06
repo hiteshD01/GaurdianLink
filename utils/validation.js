@@ -40,7 +40,8 @@ const driverFields = {
   profileImage,
   mobile_no,
   address,
-  company_name: Joi.string()
+  company_name: Joi.string(),
+  company_id: Joi.string().required(),
 };
 
 const companyFields = {
@@ -52,7 +53,7 @@ const companyFields = {
   id_no: Joi.number().required(),
   role: role.valid("company"),
   profileImage,
-  contact_name: Joi.string()
+  contact_name: Joi.string(),
 };
 
 const superAdminFields = {

@@ -66,7 +66,7 @@ const userSchema = new mongoose.Schema({
   },
   hardware_status: {
     type: String,
-    enum: [ "delivered", "order_received"],
+    enum: ["delivered", "order_received"],
   },
   auto_app_update: {
     type: Number,
@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     // required: true,
   },
-  contact_name:{
+  contact_name: {
     type: String,
   },
   access_token: {
@@ -106,6 +106,10 @@ const userSchema = new mongoose.Schema({
   disable: {
     type: Boolean,
   },
+  company_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -113,4 +117,3 @@ const userSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model("User", userSchema);
-
