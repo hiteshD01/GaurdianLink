@@ -8,6 +8,7 @@ const { uploadImageToAzure } = require("../utils/azureBlobService");
 const { setresetPasswordMail } = require("../utils/resetPasswordService");
 const Location = require("../models/Location");
 const moment = require("moment");
+const mongoose = require("mongoose");
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -176,6 +177,7 @@ exports.getUserByRole = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
   const filter = req.query.filter || "";
+  const companyIdFilter = req.query.company_id;
 
   try {
     // Build the dynamic query object
@@ -187,10 +189,12 @@ exports.getUserByRole = async (req, res) => {
         { contact_name: { $regex: filter, $options: "i" } },
         { email: { $regex: filter, $options: "i" } },
         { username: { $regex: filter, $options: "i" } },
-        // { id_no: { $regex: filter, $options: "i" } },
-        // { mobile_no: { $regex: filter, $options: "i" } },
       ],
     };
+
+    if (companyIdFilter) {
+      query.company_id = new mongoose.Types.ObjectId(companyIdFilter);
+    }
 
     const users = await User.find(query).skip(skip).limit(limit);
     if (!users.length)
@@ -257,6 +261,7 @@ exports.getUserByRole = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
