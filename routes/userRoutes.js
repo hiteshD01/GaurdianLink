@@ -11,8 +11,8 @@ router.post("/reset-password/:token", userController.resetPassword);
 
 router.get(
   "/",
-  verifyToken,
-  authorizeRoles("driver", "company", "super_admin"),
+  // verifyToken,
+  // authorizeRoles("driver", "company", "super_admin"),
   userController.getUserByRole
 );
 router.get(
