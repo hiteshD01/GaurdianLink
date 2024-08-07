@@ -198,7 +198,9 @@ exports.getUserByRole = async (req, res) => {
 
     const users = await User.find(query).skip(skip).limit(limit);
     if (!users.length)
-      return res.status(404).json({ message: "No users found with this role" });
+      return res
+        .status(404)
+        .json({ message: "No users found with this role", users: [] });
 
     const totalUsers = await User.countDocuments(query);
 
@@ -261,7 +263,6 @@ exports.getUserByRole = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
