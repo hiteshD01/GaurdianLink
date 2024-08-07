@@ -163,6 +163,7 @@ exports.getRecentSosLocations = async (req, res) => {
       { $sort: { "mostRecentLocation.createdAt": -1 } },
       { $limit: 5 },
       { $replaceRoot: { newRoot: "$mostRecentLocation" } },
+      { $match: { "userDetails.disable": { $ne: true } } },
     ]).exec();
 
     const populatedLocations = await Location.populate(recentSosLocations, {
