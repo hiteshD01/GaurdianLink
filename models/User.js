@@ -90,6 +90,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     // required: true,
   },
+  current_lat: {
+    type: String,
+  },
+  current_long: {
+    type: String,
+  },
   contact_name: {
     type: String,
   },
@@ -114,6 +120,16 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Middleware to automatically update the `updatedAt` field before each save
+userSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model("User", userSchema);

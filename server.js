@@ -7,7 +7,8 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const FacebookStrategy = require("passport-facebook").Strategy;
 const session = require("express-session");
 const cors = require("cors");
-
+var admin = require("firebase-admin");
+var serviceAccount = require("./gaurdian-link-firebase-adminsdk-xp22h-cb5a85fb8d.json");
 dotenv.config();
 
 connectDB();
@@ -106,6 +107,11 @@ app.get("/google", passport.authenticate("google"), (req, res) => {
 });
 app.get("/facebook", passport.authenticate("facebook"), (req, res) => {
   res.redirect("/");
+});
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  projectId: process.env.FIREBASE_PROJECTID,
 });
 
 const PORT = process.env.PORT || 3000;
