@@ -1,7 +1,6 @@
-const axios = require("axios");
 const Location = require("../models/Location");
 const moment = require("moment");
-// const { default: createMessage } = require("../utils/smsService");
+const { getMessaging } = require("firebase-admin/messaging");
 
 exports.createSOS = async (req, res) => {
   const { lat, long, address, type, fcmToken } = req.body;
@@ -17,84 +16,32 @@ exports.createSOS = async (req, res) => {
   try {
     const savedLocation = await newLocation.save();
 
-    if (fcmToken) {
-      const fcmServerKey = process.env.FCM_SERVER_KEY;
-      const notificationPayload = {
-        to: fcmToken,
-        notification: {
-          body: "This is testing notification",
-          title: "Test new Notification",
-          click_action: "FLUTTER_NOTIFICATION_CLICK",
-        },
-        data: {
-          body: "This is testing notification",
-          title: "Test new Notification",
-          click_action: "FLUTTER_NOTIFICATION_CLICK",
-        },
-      };
+    const message = {
+      notification: {
+        title: "Help !!",
+        body: "I am in trouble! Please help me.",
+      },
+      token: fcmToken,
+    };
 
-      const response = await axios.post(
-        "https://fcm.googleapis.com/fcm/send",
-        notificationPayload,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `key=${fcmServerKey}`,
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        console.log("Notification sent successfully");
-      } else {
-        console.error("Failed to send notification", response.data);
-      }
-    }
-
-    // // Fetch the user's emergency contacts
-    // const user = await User.findById(req.user._id).select(
-    //   "emergency_contact_1_contact emergency_contact_2_contact"
-    // );
-
-    // if (user) {
-    //   const emergencyContacts = [
-    //     user.emergency_contact_1_contact,
-    //     user.emergency_contact_2_contact,
-    //   ];
-
-    //   const alertMessage = "This is an alert message from the SOS system.";
-
-    //   // Send SMS to each emergency contact
-    //   for (const contact of emergencyContacts) {
-    //     if (contact) {
-    //       await createMessage(alertMessage, contact);
-    //     }
-    //   }
-    // }
-
-    res.status(201).json(savedLocation);
+    getMessaging()
+      .send(message)
+      .then(() => {
+        res.status(200).json({
+          message: "Successfully sent message",
+          token: fcmToken,
+          savedLocation,
+        });
+      })
+      .catch((error) => {
+        res.status(400);
+        res.send(error);
+        console.log("Error sending message:", error);
+      });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
-
-// exports.createSOS = async (req, res) => {
-//   const { lat, long, address } = req.body;
-
-//   const newLocation = new Location({
-//     lat,
-//     long,
-//     address,
-//     user_id: req.user._id,
-//   });
-
-//   try {
-//     const savedLocation = await newLocation.save();
-//     res.status(201).json(savedLocation);
-//   } catch (err) {
-//     res.status(400).json({ message: err.message });
-//   }
-// };
 
 exports.getLocationsByUser = async (req, res) => {
   const { start_date, end_date } = req.query;
