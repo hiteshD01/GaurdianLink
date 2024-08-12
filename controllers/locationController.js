@@ -1,5 +1,6 @@
 const Location = require("../models/Location");
 const User = require("../models/User");
+const Vehicle = require("../models/Vehicle");
 const moment = require("moment");
 const { getMessaging } = require("firebase-admin/messaging");
 const { locationUpdateValidation } = require("../utils/validation");
@@ -16,7 +17,10 @@ exports.createSOS = async (req, res) => {
   });
 
   try {
-    const savedLocation = await newLocation.save();
+    const user = await User.findById(req.user._id);
+    const vehicle = await Vehicle.find({ user_id: req.user._id });
+
+    await newLocation.save();
 
     const message = {
       notification: {
@@ -24,7 +28,14 @@ exports.createSOS = async (req, res) => {
         body: "I am in trouble! Please help me.",
       },
       token: fcmToken,
+      data: {
+        title: "Help !!",
+        body: "I am in trouble! Please help me.",
+        user: JSON.stringify(user),
+        vehicle: JSON.stringify(vehicle),
+      },
     };
+    const savedLocation = await newLocation.save();
 
     getMessaging()
       .send(message)
