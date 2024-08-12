@@ -1,3 +1,4 @@
+const { type } = require("@hapi/joi/lib/extend");
 const { required } = require("joi");
 const mongoose = require("mongoose");
 
@@ -6,22 +7,30 @@ const locationSchema = new mongoose.Schema({
   long: { type: String, required: true },
   address: {
     type: String,
-    required: true,
+    required: true
   },
   user_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
+    required: true
   },
   type: {
     type: String,
     required: true,
-    enum: ["sos", "start_trip", "end_trip"],
+    enum: ["sos", "start_trip", "end_trip"]
+  },
+  req_reach: {
+    type: Number,
+    required: false
+  },
+  req_accept: {
+    type: Number,
+    required: false
   },
   createdAt: {
     type: Date,
-    default: Date.now,
-  },
+    default: Date.now
+  }
 });
 
 module.exports = mongoose.model("Location", locationSchema);

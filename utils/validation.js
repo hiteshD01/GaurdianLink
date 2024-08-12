@@ -9,7 +9,7 @@ const type = Joi.string().valid("email_pass", "google", "facebook").required();
 const uid = Joi.when("type", {
   is: Joi.string().valid("google", "facebook"),
   then: Joi.string().required(),
-  otherwise: Joi.string().allow(""),
+  otherwise: Joi.string().allow("")
 });
 const profileImage = Joi.string();
 
@@ -17,7 +17,7 @@ const commonFields = {
   email,
   password,
   type,
-  uid,
+  uid
   // profileImage
 };
 
@@ -41,7 +41,7 @@ const driverFields = {
   mobile_no,
   address,
   company_name: Joi.string(),
-  company_id: Joi.string().required(),
+  company_id: Joi.string().required()
 };
 
 const companyFields = {
@@ -53,7 +53,7 @@ const companyFields = {
   id_no: Joi.number().required(),
   role: role.valid("company"),
   profileImage,
-  contact_name: Joi.string(),
+  contact_name: Joi.string()
 };
 
 const superAdminFields = {
@@ -63,13 +63,23 @@ const superAdminFields = {
   mobile_no,
   address,
   role: role.valid("super_admin"),
-  profileImage,
+  profileImage
+};
+
+const locationFields = {
+  lat: Joi.string().optional(),
+  long: Joi.string().optional(),
+  address: Joi.string().optional(),
+  type: Joi.string().valid("sos", "start_trip", "end_trip").optional(),
+  req_reach: Joi.number().optional(),
+  req_accept: Joi.number().optional()
 };
 
 const schemas = {
   driver: Joi.object(driverFields),
   company: Joi.object(companyFields),
   super_admin: Joi.object(superAdminFields),
+  location: Joi.object(locationFields)
 };
 
 const registerValidation = (data) => {
@@ -90,9 +100,17 @@ const loginValidation = (data) => {
   const schema = Joi.object({
     email,
     password,
-    fcm_token: Joi.string().required(),
+    fcm_token: Joi.string().required()
   });
   return schema.validate(data);
 };
 
-module.exports = { registerValidation, loginValidation };
+const locationUpdateValidation = (data) => {
+  return schemas.location.validate(data);
+};
+
+module.exports = {
+  registerValidation,
+  loginValidation,
+  locationUpdateValidation
+};
