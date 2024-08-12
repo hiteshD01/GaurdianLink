@@ -28,10 +28,10 @@ exports.createSOS = async (req, res) => {
         body: "I am in trouble! Please help me.",
       },
       token: fcmToken,
-      type: "emergency_sos",
       data: {
         title: "Help !!",
         body: "I am in trouble! Please help me.",
+        type: "emergency_sos",
         user: JSON.stringify(user),
         vehicle: JSON.stringify(vehicle),
       },
