@@ -20,7 +20,7 @@ exports.createSOS = async (req, res) => {
     const user = await User.findById(req.user._id);
     const vehicle = await Vehicle.find({ user_id: req.user._id });
 
-    await newLocation.save();
+    const savedLocation = await newLocation.save();
 
     const message = {
       notification: {
@@ -32,11 +32,11 @@ exports.createSOS = async (req, res) => {
         title: "Help !!",
         body: "I am in trouble! Please help me.",
         type: "emergency_sos",
+        location: JSON.stringify(savedLocation),
         user: JSON.stringify(user),
         vehicle: JSON.stringify(vehicle),
       },
     };
-    const savedLocation = await newLocation.save();
 
     getMessaging()
       .send(message)
@@ -48,14 +48,14 @@ exports.createSOS = async (req, res) => {
         });
       })
       .catch((error) => {
-        res.status(400);
-        res.send(error);
+        res.status(400).send(error);
         console.log("Error sending message:", error);
       });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 // function calculateDistance(lat1, long1, lat2, long2) {
 //   const R = 6371;
@@ -226,6 +226,8 @@ exports.getAllLocations = async (req, res) => {
 
 exports.getRecentSosLocations = async (req, res) => {
   try {
+    const { company_id } = req.user; // Assuming `req.user` contains the logged-in user's details
+
     const recentSosLocations = await Location.aggregate([
       { $match: { type: "sos" } },
       { $sort: { createdAt: -1 } },
@@ -236,9 +238,23 @@ exports.getRecentSosLocations = async (req, res) => {
         },
       },
       { $sort: { "mostRecentLocation.createdAt": -1 } },
+      {
+        $lookup: {
+          from: "users", // Ensure the correct collection name
+          localField: "mostRecentLocation.user_id",
+          foreignField: "_id",
+          as: "userDetails",
+        },
+      },
+      { $unwind: "$userDetails" },
+      {
+        $match: {
+          "userDetails.disable": { $ne: true },
+          "userDetails.company_id": company_id, // Match the company ID
+        },
+      },
       { $limit: 5 },
       { $replaceRoot: { newRoot: "$mostRecentLocation" } },
-      { $match: { "userDetails.disable": { $ne: true } } },
     ]).exec();
 
     const populatedLocations = await Location.populate(recentSosLocations, {
