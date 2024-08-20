@@ -41,7 +41,7 @@ const driverFields = {
   mobile_no,
   address,
   company_name: Joi.string(),
-  company_id: Joi.string().required()
+  company_id: Joi.string()
 };
 
 const companyFields = {
