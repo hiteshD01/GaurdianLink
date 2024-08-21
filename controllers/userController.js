@@ -9,6 +9,7 @@ const { setresetPasswordMail } = require("../utils/resetPasswordService");
 const Location = require("../models/Location");
 const moment = require("moment");
 const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -76,6 +77,25 @@ exports.register = async (req, res) => {
     try {
       const savedUser = await user.save();
       const vehicle = await Vehicle.find({ user_id: savedUser._id });
+
+      // Send credentials via email
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail', // Or use another email service
+        auth: {
+          user: process.env.EMAIL, // Your email address
+          pass: process.env.PASSWORD, // Your email password or app-specific password
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: savedUser.email,
+        subject: 'Welcome to Gaurdian Link',
+        text: `Hello ${savedUser.username || savedUser.company_name},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${req.body.password}\n\nPlease keep this information safe.\n\nBest regards.`,
+      };
+
+      await transporter.sendMail(mailOptions);
+
       res.status(201).json({ user: savedUser, vehicle: vehicle || [] });
     } catch (err) {
       res.status(400).json({ message: err.message });
