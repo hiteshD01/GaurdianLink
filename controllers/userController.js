@@ -148,23 +148,58 @@ exports.login = async (req, res) => {
 };
 
 exports.checkLogin = async (req, res) => {
-  const { email, uid, fcm_token } = req.body;
+  const { email, uid, fcm_token, username, type, role, ...rest } = req.body;
 
   if (!email || !uid) {
     return res.status(400).json({ message: "Email and UID are required" });
   }
 
-  const user = await User.findOne({ email, uid });
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
+  let user = await User.findOne({ email, uid });
 
-  if (fcm_token) {
-    user.fcm_token = fcm_token;
+  if (!user) {
+    // User not found, create a new one
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(req.body.password || 'defaultPassword', salt);
+
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
+      { _id: uid, role: role },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+    const refreshToken = jwt.sign(
+      { _id: uid, role: role },
+      process.env.REFRESH_JWT_SECRET,
+      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+    );
+
+    user = new User({
+      email,
+      uid,
+      username,  // Use the username from the body
+      type,      // Use the type from the body
+      role,      // Use the role from the body
+      password: hashedPassword,
+      fcm_token,
+      access_token: accessToken, // Set access token
+      refresh_token: refreshToken, // Set refresh token
+      ...rest,   // Include any other fields from the body
+    });
+
+    try {
+      await user.save();
+    } catch (err) {
+      return res.status(500).json({ message: "Failed to create new user", error: err.message });
+    }
+  } else {
+    // Update FCM token if provided
+    if (fcm_token) {
+      user.fcm_token = fcm_token;
+      await user.save();
+    }
   }
 
   try {
-    await user.save();
     const accessToken = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.JWT_SECRET,
@@ -188,6 +223,8 @@ exports.checkLogin = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
