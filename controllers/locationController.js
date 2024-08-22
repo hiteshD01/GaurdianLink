@@ -5,8 +5,50 @@ const moment = require("moment");
 const { getMessaging } = require("firebase-admin/messaging");
 const { locationUpdateValidation } = require("../utils/validation");
 
+function calculateDistance(lat1, long1, lat2, long2) {
+  const R = 6371;
+  const dLat = deg2rad(lat2 - lat1);
+  const dLong = deg2rad(long2 - long1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLong / 2) *
+      Math.sin(dLong / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
+async function isValidFCMToken(token) {
+  try {
+    const message = {
+      notification: {
+        title: "Token Check",
+        body: "This is a validation check.",
+      },
+      token: token,
+    };
+
+    await getMessaging().send(message, true);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 exports.createSOS = async (req, res) => {
   const { lat, long, address, type, fcmToken } = req.body;
+
+  const findUser = await User.findById(req.user._id);
+  if (!findUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  const userRadius = findUser.radius;
 
   const newLocation = new Location({
     lat,
@@ -20,9 +62,46 @@ exports.createSOS = async (req, res) => {
     const user = await User.findById(req.user._id);
     const vehicle = await Vehicle.find({ user_id: req.user._id });
 
-    const savedLocation = await newLocation.save();
+    const drivers = await User.find({
+      role: "driver",
+      current_lat: { $ne: null },
+      current_long: { $ne: null },
+      updatedAt: { $gte: moment().startOf("day").toDate() },
+    });
+    console.log('driverszz',drivers)
+    
+    const validDrivers = [];
 
-    const message = {
+    console.log('validDriversz',validDrivers)
+    for (const driver of drivers) {
+      if (driver._id.equals(req.user._id)) {
+        continue;
+      }
+      const distance = calculateDistance(
+        lat,
+        long,
+        driver.current_lat,
+        driver.current_long
+      );
+
+      if (distance <= userRadius && (await isValidFCMToken(driver.fcm_token))) {
+        validDrivers.push(driver);
+      }
+    }
+
+    console.log('distanceee',distance)
+    
+    if (validDrivers.length === 0) {
+      return res.status(404).json({
+        message: "No drivers with valid FCM tokens found within the radius",
+      });
+    }
+
+    const savedLocation = await newLocation.save();
+    const location = await Location.find({ _id: savedLocation._id });
+
+    console.log('locationnn',location)
+    const initialMessage = {
       notification: {
         title: "Help !!",
         body: "I am in trouble! Please help me.",
@@ -38,24 +117,55 @@ exports.createSOS = async (req, res) => {
       },
     };
 
-    getMessaging()
-      .send(message)
-      .then(() => {
+    const sendMessages = validDrivers.map(async (driver) => {
+      await getMessaging().send(initialMessage);
+    });
+
+    await Promise.all(sendMessages)
+      .then(async () => {
         res.status(200).json({
-          message: "Successfully sent message",
+          message: "Successfully sent initial message",
           token: fcmToken,
           savedLocation,
         });
+        savedLocation.req_reach = validDrivers.length;
+        await savedLocation.save();
+
+        // Send another notification after 2 minutes
+        setTimeout(() => {
+          const followUpMessage = {
+            notification: {
+              title: "Accepted your request",
+              body: "People coming soon to help",
+            },
+            token: fcmToken,
+            data: {
+              title: "Accepted your request",
+              body: "People coming soon to help",
+              type: "sos_request_count",
+              request_reach: "12",
+              request_accepted: "6",
+            },
+          };
+
+          getMessaging()
+            .send(followUpMessage)
+            .then(() => {
+              console.log("Successfully sent follow-up message");
+            })
+            .catch((error) => {
+              console.log("Error sending follow-up message:", error);
+            });
+        }, 1 * 30 * 1000); // 1 minutes in milliseconds
       })
       .catch((error) => {
         res.status(400).send(error);
-        console.log("Error sending message:", error);
+        console.log("Error sending initial message:", error);
       });
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
-
 
 // function calculateDistance(lat1, long1, lat2, long2) {
 //   const R = 6371;
@@ -80,9 +190,9 @@ exports.createSOS = async (req, res) => {
 //     const message = {
 //       notification: {
 //         title: "Token Check",
-//         body: "This is a validation check."
+//         body: "This is a validation check.",
 //       },
-//       token: token
+//       token: token,
 //     };
 
 //     await getMessaging().send(message, true);
@@ -107,7 +217,7 @@ exports.createSOS = async (req, res) => {
 //       role: "driver",
 //       current_lat: { $ne: null },
 //       current_long: { $ne: null },
-//       updatedAt: { $gte: moment().startOf("day").toDate() }
+//       updatedAt: { $gte: moment().startOf("day").toDate() },
 //     });
 
 //     const validDrivers = [];
@@ -130,7 +240,7 @@ exports.createSOS = async (req, res) => {
 
 //     if (validDrivers.length === 0) {
 //       return res.status(404).json({
-//         message: "No drivers with valid FCM tokens found within the radius"
+//         message: "No drivers with valid FCM tokens found within the radius",
 //       });
 //     }
 
@@ -140,7 +250,7 @@ exports.createSOS = async (req, res) => {
 //       address,
 //       type,
 //       user_id: req.user._id,
-//       req_reach: validDrivers.length
+//       req_reach: validDrivers.length,
 //     });
 //     const savedLocation = await newLocation.save();
 
@@ -148,9 +258,9 @@ exports.createSOS = async (req, res) => {
 //       const message = {
 //         notification: {
 //           title: "Help !!",
-//           body: "I am in trouble! Please help me."
+//           body: "I am in trouble! Please help me.",
 //         },
-//         token: driver.fcm_token
+//         token: driver.fcm_token,
 //       };
 
 //       await getMessaging().send(message);
@@ -164,7 +274,7 @@ exports.createSOS = async (req, res) => {
 //     res.status(200).json({
 //       message: "Successfully sent message",
 //       token: fcmToken,
-//       savedLocation
+//       savedLocation,
 //     });
 //   } catch (err) {
 //     res.status(500).json({ message: err.message });
