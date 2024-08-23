@@ -68,11 +68,9 @@ exports.createSOS = async (req, res) => {
       current_long: { $ne: null },
       updatedAt: { $gte: moment().startOf("day").toDate() },
     });
-    console.log('driverszz',drivers)
-    
+
     const validDrivers = [];
 
-    console.log('validDriversz',validDrivers)
     for (const driver of drivers) {
       if (driver._id.equals(req.user._id)) {
         continue;
@@ -89,8 +87,6 @@ exports.createSOS = async (req, res) => {
       }
     }
 
-    console.log('distanceee',distance)
-    
     if (validDrivers.length === 0) {
       return res.status(404).json({
         message: "No drivers with valid FCM tokens found within the radius",
@@ -98,70 +94,65 @@ exports.createSOS = async (req, res) => {
     }
 
     const savedLocation = await newLocation.save();
-    const location = await Location.find({ _id: savedLocation._id });
-
-    console.log('locationnn',location)
-    const initialMessage = {
-      notification: {
-        title: "Help !!",
-        body: "I am in trouble! Please help me.",
-      },
-      token: fcmToken,
-      data: {
-        title: "Help !!",
-        body: "I am in trouble! Please help me.",
-        type: "emergency_sos",
-        location: JSON.stringify(savedLocation),
-        user: JSON.stringify(user),
-        vehicle: JSON.stringify(vehicle),
-      },
-    };
 
     const sendMessages = validDrivers.map(async (driver) => {
+      const initialMessage = {
+        notification: {
+          title: "Help !!",
+          body: "I am in trouble! Please help me.",
+        },
+        token: driver.fcm_token,
+        data: {
+          title: "Help !!",
+          body: "I am in trouble! Please help me.",
+          type: "emergency_sos",
+          location: JSON.stringify(savedLocation),
+          user: JSON.stringify(user),
+          vehicle: JSON.stringify(vehicle),
+        },
+      };
+
       await getMessaging().send(initialMessage);
     });
 
-    await Promise.all(sendMessages)
-      .then(async () => {
-        res.status(200).json({
-          message: "Successfully sent initial message",
-          token: fcmToken,
-          savedLocation,
+    await Promise.all(sendMessages);
+
+    res.status(200).json({
+      message: "Successfully sent initial message",
+      token: fcmToken,
+      savedLocation,
+    });
+
+    savedLocation.req_reach = validDrivers.length;
+    await savedLocation.save();
+
+    setTimeout(async () => {
+      const updatedLocation = await Location.findById(savedLocation._id);
+
+      const followUpMessage = {
+        notification: {
+          title: "Accepted your request",
+          body: "People coming soon to help",
+        },
+        token: fcmToken,
+        data: {
+          title: "Accepted your request",
+          body: "People coming soon to help",
+          type: "sos_request_count",
+          request_reach: updatedLocation.req_reach.toString() || "0",
+          request_accepted: updatedLocation.req_accept.toString() || "0",
+        },
+      };
+
+      getMessaging()
+        .send(followUpMessage)
+        .then(() => {
+          console.log("Successfully sent follow-up message");
+        })
+        .catch((error) => {
+          console.log("Error sending follow-up message:", error);
         });
-        savedLocation.req_reach = validDrivers.length;
-        await savedLocation.save();
-
-        // Send another notification after 2 minutes
-        setTimeout(() => {
-          const followUpMessage = {
-            notification: {
-              title: "Accepted your request",
-              body: "People coming soon to help",
-            },
-            token: fcmToken,
-            data: {
-              title: "Accepted your request",
-              body: "People coming soon to help",
-              type: "sos_request_count",
-              request_reach: "12",
-              request_accepted: "6",
-            },
-          };
-
-          getMessaging()
-            .send(followUpMessage)
-            .then(() => {
-              console.log("Successfully sent follow-up message");
-            })
-            .catch((error) => {
-              console.log("Error sending follow-up message:", error);
-            });
-        }, 1 * 30 * 1000); // 1 minutes in milliseconds
-      })
-      .catch((error) => {
-        res.status(400).send(error);
-        console.log("Error sending initial message:", error);
-      });
+    }, 1 * 60 * 1000);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
