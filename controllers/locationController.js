@@ -152,7 +152,7 @@ exports.createSOS = async (req, res) => {
         .catch((error) => {
           console.log("Error sending follow-up message:", error);
         });
-    }, 1 * 60 * 1000);
+    }, 0.5 * 60 * 1000);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
