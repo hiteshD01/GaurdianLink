@@ -28,6 +28,7 @@ app.use("/uploads", express.static("uploads"));
 const userRoutes = require("./routes/userRoutes");
 const hardwareRoutes = require("./routes/hardwareRoutes");
 const termsAndConditionsRoutes = require("./routes/termsAndConditionsRoutes");
+const hardwareInstructionsRoutes = require("./routes/hardwareInstructionsRoutes");
 const privacyPolicyRoutes = require("./routes/privacyPolicyRoutes");
 const vehicleRouters = require("./routes/vehicleRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
@@ -41,6 +42,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/hardware", hardwareRoutes);
 app.use("/api/terms-and-conditions", termsAndConditionsRoutes);
+app.use("/api/hardware-instructions", hardwareInstructionsRoutes);
 app.use("/api/privacy-policy", privacyPolicyRoutes);
 app.use("/api/vehicle", vehicleRouters);
 app.use("/api/payment", paymentRoutes);
