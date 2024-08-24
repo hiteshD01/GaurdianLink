@@ -40,7 +40,8 @@ exports.paymentSuccess = async (req, res) => {
 // };
 
 exports.buyHardware = async (req, res) => {
-  const { item_quantity, address, access_token } = req.body;
+  const { item_quantity, address1, address2, city, postal_code, access_token } =
+    req.body;
   const user = await User.findById(req.user._id);
 
   try {
@@ -53,9 +54,11 @@ exports.buyHardware = async (req, res) => {
     const { name, price } = hardware;
 
     // Construct the payment URL with additional parameters
-    const paymentUrl = `https://gaurdianlink-admin.netlify.app/request-hardware?qty=${item_quantity}&address=${encodeURIComponent(
-      address
-    )}&token=${access_token}&username=${
+    const paymentUrl = `https://gaurdianlink-admin.netlify.app/request-hardware?qty=${item_quantity}&address1=${encodeURIComponent(
+      address1
+    )}&address2=${encodeURIComponent(address2)}&city=${encodeURIComponent(
+      city
+    )}&postal_code=${postal_code}&token=${access_token}&username=${
       user.username
     }&product=${encodeURIComponent(name)}&price=${price}`;
 
@@ -75,7 +78,7 @@ exports.getAllOrders = async (req, res) => {
       .populate("user_id", "-password")
       .skip(skip)
       .limit(limit);
-    
+
     const totalOrders = await Payment.countDocuments();
 
     res.status(200).json({
