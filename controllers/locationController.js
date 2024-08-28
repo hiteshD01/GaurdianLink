@@ -507,7 +507,9 @@ exports.updateLocationById = async (req, res) => {
     if (address !== undefined) updateFields.address = address;
     if (type !== undefined) updateFields.type = type;
     if (req_reach !== undefined) updateFields.req_reach = req_reach;
-    if (req_accept !== undefined) updateFields.req_accept = req_accept;
+    if (req_accept !== undefined) {
+      updateFields.$inc = { req_accept: 1 };
+    }
 
     const updatedLocation = await Location.findByIdAndUpdate(
       locationId,
