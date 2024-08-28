@@ -96,7 +96,7 @@ exports.createSOS = async (req, res) => {
     const savedLocation = await newLocation.save();
 
     const sendMessages = validDrivers.map(async (driver) => {
-      console.log("driverzz", driver);
+      console.log("driverzz", driver?.email);
       const initialMessage = {
         notification: {
           title: "Help !!",
@@ -127,7 +127,6 @@ exports.createSOS = async (req, res) => {
     savedLocation.req_reach = validDrivers.length;
     await savedLocation.save();
 
-    console.log("validDrivers", validDrivers.email);
     setTimeout(async () => {
       const updatedLocation = await Location.findById(savedLocation._id);
       console.log("req_reach", updatedLocation.req_reach);
