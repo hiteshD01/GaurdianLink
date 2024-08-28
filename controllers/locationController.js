@@ -96,6 +96,7 @@ exports.createSOS = async (req, res) => {
     const savedLocation = await newLocation.save();
 
     const sendMessages = validDrivers.map(async (driver) => {
+      console.log("driverzz", driver);
       const initialMessage = {
         notification: {
           title: "Help !!",
@@ -126,8 +127,10 @@ exports.createSOS = async (req, res) => {
     savedLocation.req_reach = validDrivers.length;
     await savedLocation.save();
 
+    console.log("validDrivers", validDrivers.email);
     setTimeout(async () => {
       const updatedLocation = await Location.findById(savedLocation._id);
+      console.log("req_reach", updatedLocation.req_reach);
 
       const followUpMessage = {
         notification: {
@@ -139,8 +142,8 @@ exports.createSOS = async (req, res) => {
           title: "Accepted your request",
           body: "People coming soon to help",
           type: "sos_request_count",
-          request_reach: updatedLocation.req_reach.toString() || "0",
-          request_accepted: updatedLocation.req_accept.toString() || "0",
+          request_reach: updatedLocation.req_reach?.toString() || "0",
+          request_accepted: updatedLocation.req_accept?.toString() || "0",
         },
       };
 
