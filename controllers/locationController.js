@@ -89,7 +89,7 @@ exports.createSOS = async (req, res) => {
 
     if (validDrivers.length === 0) {
       return res.status(404).json({
-        message: "No drivers with valid FCM tokens found within the radius",
+        message: "No drivers found within your radius.",
       });
     }
 
