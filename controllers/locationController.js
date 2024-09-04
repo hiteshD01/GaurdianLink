@@ -141,7 +141,7 @@ exports.createSOS = async (req, res) => {
             title: "Accepted your request",
             body: "People coming soon to help",
             type: "sos_request_count",
-            location: JSON.stringify(savedLocation),
+            location: JSON.stringify(updatedLocation),
             request_reach: updatedLocation.req_reach?.toString() || "0",
             request_accepted: updatedLocation.req_accept?.toString() || "0",
           },
