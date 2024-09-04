@@ -28,8 +28,8 @@ const locationSchema = new mongoose.Schema({
     required: false
   },
   help_received: {
-    type: Number,
-    default: 0
+    type: String,
+    default: ""
   },
   createdAt: {
     type: Date,

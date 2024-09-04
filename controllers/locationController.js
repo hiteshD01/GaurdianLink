@@ -56,7 +56,7 @@ exports.createSOS = async (req, res) => {
     address,
     type,
     user_id: req.user._id,
-    help_received: 0 // Initialize help_received as 0
+    help_received: ""
   });
 
   try {
@@ -129,7 +129,7 @@ exports.createSOS = async (req, res) => {
 
     const checkHelpReceived = setInterval(async () => {
       const updatedLocation = await Location.findById(savedLocation._id);
-      if (updatedLocation.help_received === 1) {
+      if (updatedLocation.help_received === "help_received" || updatedLocation.help_received === "cancel") {
         clearInterval(checkHelpReceived);
         const followUpMessage = {
           notification: {

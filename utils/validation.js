@@ -71,6 +71,7 @@ const locationFields = {
   long: Joi.string().optional(),
   address: Joi.string().optional(),
   type: Joi.string().valid("sos", "start_trip", "end_trip").optional(),
+  help_received: Joi.string().valid("help_received", "cancel", "").optional(),
   req_reach: Joi.number().optional(),
   req_accept: Joi.number().optional()
 };
