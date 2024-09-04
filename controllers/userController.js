@@ -10,6 +10,116 @@ const Location = require("../models/Location");
 const moment = require("moment");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
+const xlsx = require("xlsx");
+
+
+// Multer configuration for Excel files
+const excelStorage = multer.memoryStorage();
+const excelUpload = multer({
+  storage: excelStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || file.mimetype === "application/vnd.ms-excel") {
+      cb(null, true);
+    } else {
+      cb(new Error("Not an Excel file! Please upload an Excel file."), false);
+    }
+  },
+  limits: {
+    fileSize: 1024 * 1024 * 10, // 10 MB
+  },
+});
+
+exports.registerBulkDrivers = async (req, res) => {
+  excelUpload.single("driversSheet")(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    try {
+      // Parse the Excel file
+      const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const driverData = xlsx.utils.sheet_to_json(worksheet);
+
+      // Validate and register each driver
+      const errors = [];
+      const registeredDrivers = [];
+
+      for (const driver of driverData) {
+        const { email, username, password, ...otherData } = driver;
+
+        if (!email || !username || !password) {
+          errors.push({ email, message: "Missing required fields" });
+          continue;
+        }
+
+        // Check if email already exists
+        const emailExists = await User.findOne({ email });
+        if (emailExists) {
+          errors.push({ email, message: "Email already exists" });
+          continue;
+        }
+
+        // Check if username already exists
+        const usernameExists = await User.findOne({ username });
+        if (usernameExists) {
+          errors.push({ email, message: "Username already exists" });
+          continue;
+        }
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const user = new User({
+          email,
+          username,
+          password: hashedPassword,
+          role: "driver",
+          ...otherData,
+          access_token: jwt.sign({ _id: email, role: "driver" }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }),
+          refresh_token: jwt.sign({ _id: email, role: "driver" }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN })
+        });
+
+        try {
+          const savedUser = await user.save();
+          registeredDrivers.push(savedUser);
+
+          // Send credentials via email
+          const transporter = nodemailer.createTransport({
+            service: 'Gmail', // Or use another email service
+            auth: {
+              user: process.env.EMAIL, // Your email address
+              pass: process.env.PASSWORD, // Your email password or app-specific password
+            },
+          });
+
+          const mailOptions = {
+            from: process.env.EMAIL,
+            to: savedUser.email,
+            subject: 'Welcome to Gaurdian Link',
+            text: `Hello ${savedUser.username},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${password}\n\nPlease keep this information safe.\n\nBest regards.`,
+          };
+
+          await transporter.sendMail(mailOptions);
+
+        } catch (saveError) {
+          errors.push({ email, message: "Failed to register user" });
+        }
+      }
+
+      res.status(201).json({ registeredDrivers, errors });
+    } catch (parseError) {
+      res.status(500).json({ message: "Failed to parse Excel file", error: parseError.message });
+    }
+  });
+};
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
