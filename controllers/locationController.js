@@ -56,6 +56,7 @@ exports.createSOS = async (req, res) => {
     address,
     type,
     user_id: req.user._id,
+    help_received: ""
   });
 
   try {
@@ -96,7 +97,6 @@ exports.createSOS = async (req, res) => {
     const savedLocation = await newLocation.save();
 
     const sendMessages = validDrivers.map(async (driver) => {
-      console.log("driverzz", driver?.email);
       const initialMessage = {
         notification: {
           title: "Help !!",
@@ -127,38 +127,40 @@ exports.createSOS = async (req, res) => {
     savedLocation.req_reach = validDrivers.length;
     await savedLocation.save();
 
-    setTimeout(async () => {
+    const checkHelpReceived = setInterval(async () => {
       const updatedLocation = await Location.findById(savedLocation._id);
-      console.log("req_reach", updatedLocation.req_reach);
+      if (updatedLocation.help_received === "help_received" || updatedLocation.help_received === "cancel") {
+        clearInterval(checkHelpReceived);
+        const followUpMessage = {
+          notification: {
+            title: "Accepted your request",
+            body: "People coming soon to help",
+          },
+          token: fcmToken,
+          data: {
+            title: "Accepted your request",
+            body: "People coming soon to help",
+            type: "sos_request_count",
+            request_reach: updatedLocation.req_reach?.toString() || "0",
+            request_accepted: updatedLocation.req_accept?.toString() || "0",
+          },
+        };
 
-      const followUpMessage = {
-        notification: {
-          title: "Accepted your request",
-          body: "People coming soon to help",
-        },
-        token: fcmToken,
-        data: {
-          title: "Accepted your request",
-          body: "People coming soon to help",
-          type: "sos_request_count",
-          request_reach: updatedLocation.req_reach?.toString() || "0",
-          request_accepted: updatedLocation.req_accept?.toString() || "0",
-        },
-      };
-
-      getMessaging()
-        .send(followUpMessage)
-        .then(() => {
-          console.log("Successfully sent follow-up message");
-        })
-        .catch((error) => {
-          console.log("Error sending follow-up message:", error);
-        });
-    }, 0.5 * 60 * 1000);
+        getMessaging()
+          .send(followUpMessage)
+          .then(() => {
+            console.log("Successfully sent follow-up message");
+          })
+          .catch((error) => {
+            console.log("Error sending follow-up message:", error);
+          });
+      }
+    }, 1 * 60 * 1000); // Check every minute
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 // function calculateDistance(lat1, long1, lat2, long2) {
 //   const R = 6371;
@@ -501,7 +503,7 @@ exports.updateLocationById = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { lat, long, address, type, req_reach, req_accept } = value;
+    const { lat, long, address, type, req_reach, req_accept, help_received } = value;
 
     const updateFields = {};
     if (lat !== undefined) updateFields.lat = lat;
@@ -509,9 +511,8 @@ exports.updateLocationById = async (req, res) => {
     if (address !== undefined) updateFields.address = address;
     if (type !== undefined) updateFields.type = type;
     if (req_reach !== undefined) updateFields.req_reach = req_reach;
-    if (req_accept !== undefined) {
-      updateFields.$inc = { req_accept: 1 };
-    }
+    if (req_accept !== undefined) updateFields.$inc = { req_accept: 1 };
+    if (help_received !== undefined) updateFields.help_received = help_received;
 
     const updatedLocation = await Location.findByIdAndUpdate(
       locationId,
@@ -525,13 +526,13 @@ exports.updateLocationById = async (req, res) => {
 
     res.status(200).json({
       message: "Location updated successfully",
+      updatedLocation
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching location", error: err.message });
+    res.status(500).json({ message: "Error updating location", error: err.message });
   }
 };
+
 
 exports.getLocationById = async (req, res) => {
   const locationId = req.params.id;

@@ -27,10 +27,15 @@ const locationSchema = new mongoose.Schema({
     type: Number,
     required: false
   },
+  help_received: {
+    type: String,
+    default: ""
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
 
 module.exports = mongoose.model("Location", locationSchema);
