@@ -129,7 +129,7 @@ exports.createSOS = async (req, res) => {
 
     const checkHelpReceived = setInterval(async () => {
       const updatedLocation = await Location.findById(savedLocation._id);
-      if (updatedLocation.help_received === "help_received" || updatedLocation.help_received === "cancel") {
+      if (updatedLocation.help_received !== "help_received" || updatedLocation.help_received !== "cancel") {
         clearInterval(checkHelpReceived);
         const followUpMessage = {
           notification: {
