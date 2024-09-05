@@ -47,17 +47,34 @@ exports.registerBulkDrivers = async (req, res) => {
       const worksheet = workbook.Sheets[sheetName];
       const driverData = xlsx.utils.sheet_to_json(worksheet);
 
-      // Validate and register each driver
+      // Validate each driver's data
+      const requiredFields = ['email', 'username', 'password'];
+      const missingFields = [];
+
+      // Check if any required fields are missing in any row
+      driverData.forEach((driver, index) => {
+        const missing = requiredFields.filter((field) => !driver[field]);
+        if (missing.length > 0) {
+          missingFields.push({
+            row: index + 2, // Adding 2 since Excel row index starts from 1, and first row is header
+            missingFields: missing,
+          });
+        }
+      });
+
+      if (missingFields.length > 0) {
+        return res.status(400).json({
+          message: "Missing required fields in the Excel sheet",
+          missingFields,
+        });
+      }
+
+      // Continue to register each driver
       const errors = [];
       const registeredDrivers = [];
 
       for (const driver of driverData) {
         const { email, username, password, ...otherData } = driver;
-
-        if (!email || !username || !password) {
-          errors.push({ email, message: "Missing required fields" });
-          continue;
-        }
 
         // Check if email already exists
         const emailExists = await User.findOne({ email });
@@ -84,7 +101,7 @@ exports.registerBulkDrivers = async (req, res) => {
           role: "driver",
           ...otherData,
           access_token: jwt.sign({ _id: email, role: "driver" }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }),
-          refresh_token: jwt.sign({ _id: email, role: "driver" }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN })
+          refresh_token: jwt.sign({ _id: email, role: "driver" }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }),
         });
 
         try {
@@ -120,6 +137,7 @@ exports.registerBulkDrivers = async (req, res) => {
     }
   });
 };
+
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
