@@ -131,12 +131,20 @@ exports.registerBulkDrivers = async (req, res) => {
         }
       }
 
-      res.status(201).json({ registeredDrivers, errors });
+      // If there are errors, return a 400 response with the errors
+      if (errors.length > 0) {
+        return res.status(400).json({ message: "Some drivers could not be registered", errors });
+      }
+
+      // If no errors, return the list of registered drivers
+      res.status(201).json({ registeredDrivers });
+      
     } catch (parseError) {
       res.status(500).json({ message: "Failed to parse Excel file", error: parseError.message });
     }
   });
 };
+
 
 
 exports.register = async (req, res) => {
@@ -153,13 +161,13 @@ exports.register = async (req, res) => {
     if (emailExists)
       return res.status(400).json({ message: "Email already exists" });
 
-    if (req.body.role === "driver") {
-      const usernameExists = await User.findOne({
-        username: req.body.username,
-      });
-      if (usernameExists)
-        return res.status(400).json({ message: "Username already exists" });
-    }
+    // if (req.body.role === "driver") {
+    //   const usernameExists = await User.findOne({
+    //     username: req.body.username,
+    //   });
+    //   if (usernameExists)
+    //     return res.status(400).json({ message: "Username already exists" });
+    // }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
@@ -219,7 +227,7 @@ exports.register = async (req, res) => {
         from: process.env.EMAIL,
         to: savedUser.email,
         subject: 'Welcome to Gaurdian Link',
-        text: `Hello ${savedUser.username || savedUser.company_name},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${req.body.password}\n\nPlease keep this information safe.\n\nBest regards.`,
+        text: `Hello ${savedUser.first_name && savedUser.last_name  || savedUser.company_name},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${req.body.password}\n\nPlease keep this information safe.\n\nBest regards.`,
       };
 
       await transporter.sendMail(mailOptions);
