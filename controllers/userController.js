@@ -389,7 +389,7 @@ exports.getUserByRole = async (req, res) => {
       query.company_id = new mongoose.Types.ObjectId(companyIdFilter);
     }
 
-    const users = await User.find(query).skip(skip).limit(limit);
+    const users = await User.find(query).sort({createdAt : -1}).skip(skip).limit(limit);
     if (!users.length)
       return res
         // .status(404)
