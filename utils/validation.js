@@ -23,7 +23,10 @@ const commonFields = {
 
 const driverFields = {
   ...commonFields,
-  username: Joi.string().min(6).required(),
+
+  // username: Joi.string().min(6).required(),
+  first_name: Joi.string().required(),
+  last_name: Joi.string().required(),
   role: role.valid("driver"),
   share_contacts: Joi.number(),
   radius: Joi.number(),
