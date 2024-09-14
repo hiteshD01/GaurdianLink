@@ -50,13 +50,16 @@ exports.createSOS = async (req, res) => {
 
   const userRadius = findUser.radius;
 
+  // Create a new Location with default values for req_reach and req_accept
   const newLocation = new Location({
     lat,
     long,
     address,
     type,
     user_id: req.user._id,
-    help_received: ""
+    help_received: "",
+    req_reach: 0,    // Set default value of 0 for req_reach
+    req_accept: 0,   // Set default value of 0 for req_accept
   });
 
   try {
@@ -94,8 +97,10 @@ exports.createSOS = async (req, res) => {
       });
     }
 
+    // Save new location with default values for req_reach and req_accept
     const savedLocation = await newLocation.save();
 
+    // Send notification to valid drivers
     const sendMessages = validDrivers.map(async (driver) => {
       const initialMessage = {
         notification: {
@@ -118,15 +123,18 @@ exports.createSOS = async (req, res) => {
 
     await Promise.all(sendMessages);
 
+    // Update req_reach after notifications are sent
     res.status(200).json({
       message: "Successfully sent initial message",
       token: fcmToken,
       savedLocation,
     });
 
+    // Update req_reach with the number of drivers notified
     savedLocation.req_reach = validDrivers.length;
     await savedLocation.save();
 
+    // Uncomment if you need to implement help_received tracking
     // const checkHelpReceived = setInterval(async () => {
     //   const updatedLocation = await Location.findById(savedLocation._id);
     //   if (updatedLocation.help_received !== "help_received") {
@@ -161,6 +169,7 @@ exports.createSOS = async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 };
+
 
 exports.getLocationsByUser = async (req, res) => {
   const { start_date, end_date } = req.query;
@@ -397,14 +406,7 @@ exports.updateLocationById = async (req, res) => {
     if (address !== undefined) updateFields.address = address;
     if (type !== undefined) updateFields.type = type;
     if (req_reach !== undefined) updateFields.req_reach = req_reach;
-    
-    // Set default value for req_accept if undefined, or increment it
-    if (req_accept !== undefined) {
-      updateFields.$inc = { req_accept: 1 };
-    } else {
-      updateFields.req_accept = 0;
-    }
-
+    if (req_accept !== undefined) updateFields.$inc = { req_accept: 1 };
     if (help_received !== undefined) updateFields.help_received = help_received;
 
     const updatedLocation = await Location.findByIdAndUpdate(
