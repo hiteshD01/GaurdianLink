@@ -398,7 +398,18 @@ exports.updateLocationById = async (req, res) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const { lat, long, address, type, req_reach, req_accept, help_received } = value;
+    const { lat, long, address, type, req_reach, req_accept, help_received } =
+      value;
+
+    // Check if the location has help_received="help_received"
+    const existingLocation = await Location.findById(locationId);
+    if (!existingLocation) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    if (req.user.role === "driver" && existingLocation.help_received === "help_received") {
+      return res.status(400).json({ message: "Help received successfully." });
+    }
 
     const updateFields = {};
     if (lat !== undefined) updateFields.lat = lat;
@@ -434,6 +445,15 @@ exports.getLocationById = async (req, res) => {
   try {
     const location = await Location.findById(locationId);
 
+    // Check if the location has help_received="help_received"
+    const existingLocation = await Location.findById(locationId);
+    if (!existingLocation) {
+      return res.status(404).json({ message: "Location not found" });
+    }
+
+    if (req.user.role === "driver" && existingLocation.help_received === "help_received") {
+      return res.status(400).json({ message: "Help received successfully." });
+    }
     if (!location) {
       return res.status(404).json({ message: "Location not found" });
     }
