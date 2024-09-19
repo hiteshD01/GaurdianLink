@@ -270,10 +270,9 @@ exports.getRecentSosLocations = async (req, res) => {
 
 exports.getHotspots = async (req, res) => {
   const { type } = req.query;
-
-  let dateRange;
   const today = moment().startOf("day");
   const endOfToday = moment().endOf("day");
+  let dateRange;
 
   switch (type) {
     case "today":
@@ -317,13 +316,43 @@ exports.getHotspots = async (req, res) => {
     const hotspots = await Location.aggregate([
       { $match: matchCriteria },
       {
-        $group: {
-          _id: { lat: "$lat", long: "$long", address: "$address" },
-          count: { $sum: 1 },
+        $project: {
+          lat: {
+            $convert: {
+              input: "$lat",
+              to: "double",
+              onError: null,  // Handle conversion errors
+              onNull: null,   // Handle null values
+            },
+          },
+          long: {
+            $convert: {
+              input: "$long",
+              to: "double",
+              onError: null,
+              onNull: null,
+            },
+          },
+          address: 1,
+          createdAt: 1,
         },
       },
       {
-        $sort: { count: -1 },
+        $project: {
+          lat: { $round: ["$lat", 4] },  // Round lat to 4 decimal places
+          long: { $round: ["$long", 4] },  // Round long to 4 decimal places
+          address: 1,
+        },
+      },
+      {
+        $group: {
+          _id: { lat: "$lat", long: "$long" }, // Group only by lat and long
+          address: { $first: "$address" },     // Take the first address from grouped records
+          count: { $sum: 1 },                  // Count the occurrences of each unique lat/long pair
+        },
+      },
+      {
+        $sort: { count: -1 },  // Sort by the number of times the hotspot has been called
       },
     ]);
 
@@ -331,17 +360,14 @@ exports.getHotspots = async (req, res) => {
       return res.status(200).json([]);
     }
 
-    const topCount = hotspots[0].count;
-
-    const hotspotsWithPercentage = hotspots.map((hotspot) => ({
+    const hotspotsWithCount = hotspots.map((hotspot) => ({
       lat: hotspot._id.lat,
       long: hotspot._id.long,
-      address: hotspot._id.address,
-      percentage: ((hotspot.count / topCount) * 100).toFixed(2),
+      address: hotspot.address,  // Use the first address from the group
       timesCalled: hotspot.count,
     }));
 
-    res.status(200).json(hotspotsWithPercentage);
+    res.status(200).json(hotspotsWithCount);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
