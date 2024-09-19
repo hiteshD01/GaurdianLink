@@ -13,13 +13,16 @@ const nodemailer = require("nodemailer");
 const multer = require("multer");
 const xlsx = require("xlsx");
 
-
 // Multer configuration for Excel files
 const excelStorage = multer.memoryStorage();
 const excelUpload = multer({
   storage: excelStorage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || file.mimetype === "application/vnd.ms-excel") {
+    if (
+      file.mimetype ===
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+      file.mimetype === "application/vnd.ms-excel"
+    ) {
       cb(null, true);
     } else {
       cb(new Error("Not an Excel file! Please upload an Excel file."), false);
@@ -48,7 +51,7 @@ exports.registerBulkDrivers = async (req, res) => {
       const driverData = xlsx.utils.sheet_to_json(worksheet);
 
       // Validate each driver's data
-      const requiredFields = ['email', 'username', 'password'];
+      const requiredFields = ["email", "username", "password"];
       const missingFields = [];
 
       // Check if any required fields are missing in any row
@@ -100,8 +103,16 @@ exports.registerBulkDrivers = async (req, res) => {
           password: hashedPassword,
           role: "driver",
           ...otherData,
-          access_token: jwt.sign({ _id: email, role: "driver" }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN }),
-          refresh_token: jwt.sign({ _id: email, role: "driver" }, process.env.REFRESH_JWT_SECRET, { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }),
+          access_token: jwt.sign(
+            { _id: email, role: "driver" },
+            process.env.JWT_SECRET,
+            // { expiresIn: process.env.JWT_EXPIRES_IN }
+          ),
+          refresh_token: jwt.sign(
+            { _id: email, role: "driver" },
+            process.env.REFRESH_JWT_SECRET,
+            // { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+          ),
         });
 
         try {
@@ -110,7 +121,7 @@ exports.registerBulkDrivers = async (req, res) => {
 
           // Send credentials via email
           const transporter = nodemailer.createTransport({
-            service: 'Gmail', // Or use another email service
+            service: "Gmail", // Or use another email service
             auth: {
               user: process.env.EMAIL, // Your email address
               pass: process.env.PASSWORD, // Your email password or app-specific password
@@ -120,12 +131,11 @@ exports.registerBulkDrivers = async (req, res) => {
           const mailOptions = {
             from: process.env.EMAIL,
             to: savedUser.email,
-            subject: 'Welcome to Gaurdian Link',
+            subject: "Welcome to Gaurdian Link",
             text: `Hello ${savedUser.username},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${password}\n\nPlease keep this information safe.\n\nBest regards.`,
           };
 
           await transporter.sendMail(mailOptions);
-
         } catch (saveError) {
           errors.push({ email, message: "Failed to register user" });
         }
@@ -133,19 +143,23 @@ exports.registerBulkDrivers = async (req, res) => {
 
       // If there are errors, return a 400 response with the errors
       if (errors.length > 0) {
-        return res.status(400).json({ message: "Some drivers could not be registered", errors });
+        return res
+          .status(400)
+          .json({ message: "Some drivers could not be registered", errors });
       }
 
       // If no errors, return the list of registered drivers
       res.status(201).json({ registeredDrivers });
-      
     } catch (parseError) {
-      res.status(500).json({ message: "Failed to parse Excel file", error: parseError.message });
+      res
+        .status(500)
+        .json({
+          message: "Failed to parse Excel file",
+          error: parseError.message,
+        });
     }
   });
 };
-
-
 
 exports.register = async (req, res) => {
   upload.single("profileImage")(req, res, async (err) => {
@@ -199,14 +213,14 @@ exports.register = async (req, res) => {
       access_token: jwt.sign(
         { _id: req.body.email, role: req.body.role },
         process.env.JWT_SECRET,
-        {
-          expiresIn: process.env.JWT_EXPIRES_IN,
-        }
+        // {
+        //   expiresIn: process.env.JWT_EXPIRES_IN,
+        // }
       ),
       refresh_token: jwt.sign(
         { _id: req.body.email, role: req.body.role },
         process.env.REFRESH_JWT_SECRET,
-        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+        // { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
       ),
     });
 
@@ -216,7 +230,7 @@ exports.register = async (req, res) => {
 
       // Send credentials via email
       const transporter = nodemailer.createTransport({
-        service: 'Gmail', // Or use another email service
+        service: "Gmail", // Or use another email service
         auth: {
           user: process.env.EMAIL, // Your email address
           pass: process.env.PASSWORD, // Your email password or app-specific password
@@ -226,8 +240,15 @@ exports.register = async (req, res) => {
       const mailOptions = {
         from: process.env.EMAIL,
         to: savedUser.email,
-        subject: 'Welcome to Gaurdian Link',
-        text: `Hello ${savedUser.first_name && savedUser.last_name  || savedUser.company_name},\n\nYour account has been created successfully!\n\nUsername: ${savedUser.email}\nPassword: ${req.body.password}\n\nPlease keep this information safe.\n\nBest regards.`,
+        subject: "Welcome to Gaurdian Link",
+        text: `Hello ${
+          (savedUser.first_name && savedUser.last_name) ||
+          savedUser.company_name
+        },\n\nYour account has been created successfully!\n\nUsername: ${
+          savedUser.email
+        }\nPassword: ${
+          req.body.password
+        }\n\nPlease keep this information safe.\n\nBest regards.`,
       };
 
       await transporter.sendMail(mailOptions);
@@ -261,13 +282,13 @@ exports.login = async (req, res) => {
 
     const accessToken = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      process.env.JWT_SECRET
+      // { expiresIn: process.env.JWT_EXPIRES_IN }
     );
     const refreshToken = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.REFRESH_JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      process.env.REFRESH_JWT_SECRET
+      // { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
     );
 
     const vehicles = await Vehicle.find({ user_id: user._id });
@@ -295,37 +316,42 @@ exports.checkLogin = async (req, res) => {
   if (!user) {
     // User not found, create a new one
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(req.body.password || 'defaultPassword', salt);
+    const hashedPassword = await bcrypt.hash(
+      req.body.password || "defaultPassword",
+      salt
+    );
 
     // Generate JWT tokens
     const accessToken = jwt.sign(
       { _id: uid, role: role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      process.env.JWT_SECRET
+      // { expiresIn: process.env.JWT_EXPIRES_IN }
     );
     const refreshToken = jwt.sign(
       { _id: uid, role: role },
-      process.env.REFRESH_JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      process.env.REFRESH_JWT_SECRET
+      // { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
     );
 
     user = new User({
       email,
       uid,
-      username,  // Use the username from the body
-      type,      // Use the type from the body
-      role,      // Use the role from the body
+      username, // Use the username from the body
+      type, // Use the type from the body
+      role, // Use the role from the body
       password: hashedPassword,
       fcm_token,
       access_token: accessToken, // Set access token
       refresh_token: refreshToken, // Set refresh token
-      ...rest,   // Include any other fields from the body
+      ...rest, // Include any other fields from the body
     });
 
     try {
       await user.save();
     } catch (err) {
-      return res.status(500).json({ message: "Failed to create new user", error: err.message });
+      return res
+        .status(500)
+        .json({ message: "Failed to create new user", error: err.message });
     }
   } else {
     // Update FCM token if provided
@@ -338,13 +364,13 @@ exports.checkLogin = async (req, res) => {
   try {
     const accessToken = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      process.env.JWT_SECRET
+      // { expiresIn: process.env.JWT_EXPIRES_IN }
     );
     const refreshToken = jwt.sign(
       { _id: user._id, role: user.role },
-      process.env.REFRESH_JWT_SECRET,
-      { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      process.env.REFRESH_JWT_SECRET
+      // { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
     );
 
     const vehicles = await Vehicle.find({ user_id: user._id });
@@ -359,8 +385,6 @@ exports.checkLogin = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 exports.getUserByRole = async (req, res) => {
   const role = req.query.role;
@@ -389,11 +413,16 @@ exports.getUserByRole = async (req, res) => {
       query.company_id = new mongoose.Types.ObjectId(companyIdFilter);
     }
 
-    const users = await User.find(query).sort({createdAt : -1}).skip(skip).limit(limit);
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
     if (!users.length)
-      return res
-        // .status(404)
-        .json(users);
+      return (
+        res
+          // .status(404)
+          .json(users)
+      );
 
     const totalUsers = await User.countDocuments(query);
 
@@ -466,8 +495,8 @@ exports.forgotPassword = async (req, res) => {
 
   const resetToken = jwt.sign(
     { _id: user._id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
+    process.env.JWT_SECRET
+    // { expiresIn: "1h" }
   );
 
   const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
