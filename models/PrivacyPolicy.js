@@ -3,7 +3,7 @@ const mongoose = require("mongoose");
 const privacyPolicySchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: {
-    type: String,
+    type: Object,
     required: true,
   },
   createdAt: {
