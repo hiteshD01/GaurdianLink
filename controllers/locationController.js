@@ -171,72 +171,6 @@ exports.createSOS = async (req, res) => {
 };
 
 
-exports.getLocationsByUser = async (req, res) => {
-  const { start_date, end_date } = req.query;
-
-  let filter = {
-    user_id: req.user._id, // Filter by logged-in user's ID
-    type: "sos", // Filter by location type "sos"
-  };
-
-  if (start_date && end_date) {
-    filter.createdAt = {
-      $gte: new Date(start_date),
-      $lte: new Date(end_date),
-    };
-  }
-
-  try {
-    const locations = await Location.aggregate([
-      { $match: filter },
-      {
-        $project: {
-          lat: {
-            $convert: {
-              input: "$lat",
-              to: "double",
-              onError: null,
-              onNull: null,
-            },
-          },
-          long: {
-            $convert: {
-              input: "$long",
-              to: "double",
-              onError: null,
-              onNull: null,
-            },
-          },
-          address: 1,
-          createdAt: 1,
-        },
-      },
-      {
-        $project: {
-          lat: { $round: ["$lat", 4] },  // Round lat to 4 decimal places
-          long: { $round: ["$long", 4] }, // Round long to 4 decimal places
-          address: 1,
-        },
-      },
-      {
-        $group: {
-          _id: { lat: "$lat", long: "$long" }, // Group by lat and long
-          address: { $first: "$address" },      // Take the first address from grouped records
-          count: { $sum: 1 },                   // Count occurrences
-        },
-      },
-      {
-        $sort: { count: -1 }, // Sort by count (number of times the hotspot has been called)
-      },
-    ]);
-
-    res.status(200).json(locations);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-
 // exports.getLocationsByUser = async (req, res) => {
 //   const { start_date, end_date } = req.query;
 
@@ -253,15 +187,81 @@ exports.getLocationsByUser = async (req, res) => {
 //   }
 
 //   try {
-//     const locations = await Location.find(filter).populate(
-//       "user_id",
-//       "-password"
-//     );
+//     const locations = await Location.aggregate([
+//       { $match: filter },
+//       {
+//         $project: {
+//           lat: {
+//             $convert: {
+//               input: "$lat",
+//               to: "double",
+//               onError: null,
+//               onNull: null,
+//             },
+//           },
+//           long: {
+//             $convert: {
+//               input: "$long",
+//               to: "double",
+//               onError: null,
+//               onNull: null,
+//             },
+//           },
+//           address: 1,
+//           createdAt: 1,
+//         },
+//       },
+//       {
+//         $project: {
+//           lat: { $round: ["$lat", 4] },  // Round lat to 4 decimal places
+//           long: { $round: ["$long", 4] }, // Round long to 4 decimal places
+//           address: 1,
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: { lat: "$lat", long: "$long" }, // Group by lat and long
+//           address: { $first: "$address" },      // Take the first address from grouped records
+//           count: { $sum: 1 },                   // Count occurrences
+//         },
+//       },
+//       {
+//         $sort: { count: -1 }, // Sort by count (number of times the hotspot has been called)
+//       },
+//     ]);
+
 //     res.status(200).json(locations);
 //   } catch (err) {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
+
+
+exports.getLocationsByUser = async (req, res) => {
+  const { start_date, end_date } = req.query;
+
+  let filter = {
+    user_id: req.user._id, // Filter by logged-in user's ID
+    type: "sos", // Filter by location type "sos"
+  };
+
+  if (start_date && end_date) {
+    filter.createdAt = {
+      $gte: new Date(start_date),
+      $lte: new Date(end_date),
+    };
+  }
+
+  try {
+    const locations = await Location.find(filter).populate(
+      "user_id",
+      "-password"
+    );
+    res.status(200).json(locations);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 exports.getAllLocations = async (req, res) => {
   const { start_date, end_date, type } = req.query;
