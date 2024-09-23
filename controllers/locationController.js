@@ -67,7 +67,7 @@ exports.createSOS = async (req, res) => {
     const vehicle = await Vehicle.find({ user_id: req.user._id });
 
     const drivers = await User.find({
-      role: "driver",
+      // role: "driver",
       current_lat: { $ne: null },
       current_long: { $ne: null },
       updatedAt: { $gte: moment().startOf("day").toDate() },
