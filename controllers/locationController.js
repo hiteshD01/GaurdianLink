@@ -93,7 +93,7 @@ exports.createSOS = async (req, res) => {
 
     if (validDrivers.length === 0) {
       return res.status(404).json({
-        message: "No drivers found within your radius.",
+        message: "No user found within your radius.",
       });
     }
 
