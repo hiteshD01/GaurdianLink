@@ -58,8 +58,8 @@ exports.createSOS = async (req, res) => {
     type,
     user_id: req.user._id,
     help_received: "",
-    req_reach: 0,    // Set default value of 0 for req_reach
-    req_accept: 0,   // Set default value of 0 for req_accept
+    req_reach: 0, // Set default value of 0 for req_reach
+    req_accept: 0, // Set default value of 0 for req_accept
   });
 
   try {
@@ -170,7 +170,6 @@ exports.createSOS = async (req, res) => {
   }
 };
 
-
 // exports.getLocationsByUser = async (req, res) => {
 //   const { start_date, end_date } = req.query;
 
@@ -235,7 +234,6 @@ exports.createSOS = async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
-
 
 exports.getLocationsByUser = async (req, res) => {
   const { start_date, end_date } = req.query;
@@ -335,6 +333,115 @@ exports.getRecentSosLocations = async (req, res) => {
 };
 
 exports.getHotspots = async (req, res) => {
+  const { type, start_date, end_date } = req.query;
+  const today = moment().startOf("day");
+  const endOfToday = moment().endOf("day");
+  let dateRange;
+
+  switch (type) {
+    case "today":
+      dateRange = { $gte: today.toDate(), $lte: endOfToday.toDate() };
+      break;
+    case "yesterday":
+      const yesterday = today.subtract(1, "days");
+      dateRange = {
+        $gte: yesterday.startOf("day").toDate(),
+        $lte: yesterday.endOf("day").toDate(),
+      };
+      break;
+    case "thisWeek":
+      dateRange = {
+        $gte: today.startOf("week").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    case "thisMonth":
+      dateRange = {
+        $gte: today.startOf("month").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    case "thisYear":
+      dateRange = {
+        $gte: today.startOf("year").toDate(),
+        $lte: endOfToday.toDate(),
+      };
+      break;
+    default:
+      dateRange = null;
+  }
+
+  try {
+    let matchCriteria = { type: "sos" };
+
+    // Add date range filtering if start_date and end_date are provided
+    if (start_date && end_date) {
+      matchCriteria.createdAt = {
+        $gte: new Date(start_date),
+        $lte: new Date(end_date),
+      };
+    } else if (dateRange) {
+      matchCriteria.createdAt = dateRange;
+    }
+
+    const hotspots = await Location.aggregate([
+      { $match: matchCriteria },
+      {
+        $project: {
+          lat: {
+            $convert: {
+              input: "$lat",
+              to: "double",
+              onError: null, // Handle conversion errors
+              onNull: null, // Handle null values
+            },
+          },
+          long: {
+            $convert: {
+              input: "$long",
+              to: "double",
+              onError: null,
+              onNull: null,
+            },
+          },
+          address: 1,
+          createdAt: 1,
+        },
+      },
+      {
+        $project: {
+          lat: { $round: ["$lat", 4] }, // Round lat to 4 decimal places
+          long: { $round: ["$long", 4] }, // Round long to 4 decimal places
+          address: 1,
+        },
+      },
+      {
+        $group: {
+          _id: { lat: "$lat", long: "$long" }, // Group only by lat and long
+          address: { $first: "$address" }, // Take the first address from grouped records
+          count: { $sum: 1 }, // Count the occurrences of each unique lat/long pair
+        },
+      },
+      {
+        $sort: { count: -1 }, // Sort by the number of times the hotspot has been called
+      },
+    ]);
+
+    if (hotspots.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const hotspotsWithCount = hotspots.map((hotspot) => ({
+      lat: hotspot._id.lat,
+      long: hotspot._id.long,
+      address: hotspot.address, // Use the first address from the group
+      timesCalled: hotspot.count,
+    }));
+
+    res.status(200).json(hotspotsWithCount);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // exports.getHotspots = async (req, res) => {
@@ -466,7 +573,6 @@ exports.getHotspots = async (req, res) => {
 //     res.status(500).json({ message: err.message });
 //   }
 // };
-
 
 // exports.getHotspots = async (req, res) => {
 //   const { type } = req.query;
@@ -658,13 +764,14 @@ exports.updateLocationById = async (req, res) => {
 
     res.status(200).json({
       message: "Location updated successfully",
-      updatedLocation
+      updatedLocation,
     });
   } catch (err) {
-    res.status(500).json({ message: "Error updating location", error: err.message });
+    res
+      .status(500)
+      .json({ message: "Error updating location", error: err.message });
   }
 };
-
 
 exports.getLocationById = async (req, res) => {
   const locationId = req.params.id;
