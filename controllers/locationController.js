@@ -335,7 +335,7 @@ exports.getRecentSosLocations = async (req, res) => {
 };
 
 exports.getHotspots = async (req, res) => {
-  const { type, start_date, end_date } = req.query;
+  const { type, start_date, end_date, company_id } = req.query;
   const today = moment().startOf("day");
   const endOfToday = moment().endOf("day");
   let dateRange;
@@ -389,6 +389,24 @@ exports.getHotspots = async (req, res) => {
     const hotspots = await Location.aggregate([
       { $match: matchCriteria },
       {
+        // Join with the User collection to get the company_id
+        $lookup: {
+          from: "users", // The User collection
+          localField: "user_id", // user_id in the Location collection
+          foreignField: "_id", // _id in the User collection
+          as: "user", // Result will be stored in the 'user' field
+        },
+      },
+      {
+        $unwind: "$user", // Unwind the joined user array
+      },
+      {
+        // Match based on the provided company_id
+        $match: {
+          "user.company_id": company_id,
+        },
+      },
+      {
         $project: {
           lat: {
             $convert: {
@@ -419,7 +437,7 @@ exports.getHotspots = async (req, res) => {
       },
       {
         $group: {
-          _id: { lat: "$lat", long: "$long" }, // Group only by lat and long
+          _id: { lat: "$lat", long: "$long" }, // Group by lat and long
           address: { $first: "$address" },     // Take the first address from grouped records
           count: { $sum: 1 },                  // Count the occurrences of each unique lat/long pair
         },
@@ -445,6 +463,7 @@ exports.getHotspots = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 // exports.getHotspots = async (req, res) => {
 //   const { type } = req.query;
@@ -611,8 +630,8 @@ exports.updateLocationById = async (req, res) => {
       return res.status(404).json({ message: "Location not found" });
     }
 
-    if (req.user.role === "driver" && existingLocation.help_received === "help_received") {
-      return res.status(400).json({ message: "Help received successfully." });
+    if (existingLocation.help_received === "help_received") {
+      return res.status(200).json({ message: "Help received successfully." });
     }
 
     const updateFields = {};
@@ -655,8 +674,8 @@ exports.getLocationById = async (req, res) => {
       return res.status(404).json({ message: "Location not found" });
     }
 
-    if (req.user.role === "driver" && existingLocation.help_received === "help_received") {
-      return res.status(400).json({ message: "Help received successfully." });
+    if (existingLocation.help_received === "help_received") {
+      return res.status(200).json({ message: "Help received successfully." });
     }
     if (!location) {
       return res.status(404).json({ message: "Location not found" });
