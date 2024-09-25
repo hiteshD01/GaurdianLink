@@ -56,7 +56,24 @@ const companyFields = {
   id_no: Joi.number().required(),
   role: role.valid("company"),
   profileImage,
-  contact_name: Joi.string()
+  contact_name: Joi.string(),
+  share_contacts: Joi.number(),
+  radius: Joi.number(),
+  hardware_status: Joi.string(),
+  auto_app_update: Joi.number(),
+  id_no: Joi.number(),
+  social_app: Joi.number(),
+  emergency_help: Joi.number(),
+  emergency_contact_1_email: Joi.string(),
+  emergency_contact_1_contact: Joi.number(),
+  emergency_contact_2_email: Joi.string(),
+  emergency_contact_2_contact: Joi.number(),
+  fcm_token: Joi.string(),
+  profileImage,
+  mobile_no,
+  address,
+  company_name: Joi.string(),
+  company_id: Joi.string()
 };
 
 const superAdminFields = {
@@ -66,7 +83,24 @@ const superAdminFields = {
   mobile_no,
   address,
   role: role.valid("super_admin"),
-  profileImage
+  profileImage,
+  share_contacts: Joi.number(),
+  radius: Joi.number(),
+  hardware_status: Joi.string(),
+  auto_app_update: Joi.number(),
+  id_no: Joi.number(),
+  social_app: Joi.number(),
+  emergency_help: Joi.number(),
+  emergency_contact_1_email: Joi.string(),
+  emergency_contact_1_contact: Joi.number(),
+  emergency_contact_2_email: Joi.string(),
+  emergency_contact_2_contact: Joi.number(),
+  fcm_token: Joi.string(),
+  profileImage,
+  mobile_no,
+  address,
+  company_name: Joi.string(),
+  company_id: Joi.string()
 };
 
 const locationFields = {
