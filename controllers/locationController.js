@@ -740,7 +740,7 @@ exports.updateLocationById = async (req, res) => {
     }
 
     if (existingLocation.help_received === "help_received") {
-      return res.status(200).json({ message: "Help received successfully." });
+      return res.status(400).json({ message: "Help received successfully." });
     }
 
     const updateFields = {};
