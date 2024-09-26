@@ -7,7 +7,7 @@ const contactSupportSchema = new mongoose.Schema({
     required: true,
   },
   contact_number: {
-    type: Number,
+    type: String,
     required: true,
   },
   contact_email: {
