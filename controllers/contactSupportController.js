@@ -7,12 +7,13 @@ exports.createOrReplaceContactSupport = async (req, res) => {
     let contactSupport = await ContactSupport.findOne();
 
     if (!contactSupport) {
-      contactSupport = new ContactSupport({ title, details, contact_number, contact_email });
+      contactSupport = new ContactSupport({ title, details, contact_number, contact_email, contact_website });
     } else {
       contactSupport.title = title;
       contactSupport.details = details;
       contactSupport.contact_number = contact_number;
       contactSupport.contact_email = contact_email;
+      contactSupport.contact_website = contact_website;
     }
 
     const savedPrivacyPolicy = await contactSupport.save();
