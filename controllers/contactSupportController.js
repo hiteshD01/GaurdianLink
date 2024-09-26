@@ -1,7 +1,7 @@
 const ContactSupport = require("../models/ContactSupport");
 
 exports.createOrReplaceContactSupport = async (req, res) => {
-  const { title, details, contact_number, contact_email } = req.body;
+  const { title, details, contact_number, contact_email, contact_website } = req.body;
 
   try {
     let contactSupport = await ContactSupport.findOne();
