@@ -51,7 +51,7 @@ exports.registerBulkDrivers = async (req, res) => {
       const driverData = xlsx.utils.sheet_to_json(worksheet);
 
       // Validate each driver's data
-      const requiredFields = ["email", "username", "password"];
+      const requiredFields = ["first_name", "last_name", "email", "password"];
       const missingFields = [];
 
       // Check if any required fields are missing in any row
@@ -77,7 +77,7 @@ exports.registerBulkDrivers = async (req, res) => {
       const registeredDrivers = [];
 
       for (const driver of driverData) {
-        const { email, username, password, ...otherData } = driver;
+        const { first_name, last_name, email, password, ...otherData } = driver;
 
         // Check if email already exists
         const emailExists = await User.findOne({ email });
@@ -87,19 +87,20 @@ exports.registerBulkDrivers = async (req, res) => {
         }
 
         // Check if username already exists
-        const usernameExists = await User.findOne({ username });
-        if (usernameExists) {
-          errors.push({ email, message: "Username already exists" });
-          continue;
-        }
+        // const usernameExists = await User.findOne({ username });
+        // if (usernameExists) {
+        //   errors.push({ email, message: "Username already exists" });
+        //   continue;
+        // }
 
         // Hash the password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const user = new User({
+          first_name,
+          last_name,
           email,
-          username,
           password: hashedPassword,
           role: "driver",
           ...otherData,
