@@ -743,6 +743,10 @@ exports.updateLocationById = async (req, res) => {
       return res.status(400).json({ message: "Help received successfully." });
     }
 
+    if (existingLocation.help_received === "cancel") {
+      return res.status(400).json({ message: "SOS request cancel by user" });
+    }
+
     const updateFields = {};
     if (lat !== undefined) updateFields.lat = lat;
     if (long !== undefined) updateFields.long = long;
@@ -787,6 +791,11 @@ exports.getLocationById = async (req, res) => {
     if (existingLocation.help_received === "help_received") {
       return res.status(400).json({ message: "Help received successfully." });
     }
+
+    if (existingLocation.help_received === "cancel") {
+      return res.status(400).json({ message: "SOS request cancel by User." });
+    }
+
     if (!location) {
       return res.status(404).json({ message: "Location not found" });
     }
