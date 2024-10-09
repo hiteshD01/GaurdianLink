@@ -70,7 +70,6 @@ module.exports = { setresetPasswordMail };
 //     const info = await transporter.sendMail(mailOptions);
 //     console.log("OTP sent: " + info.response);
 //   } catch (error) {
-//     console.error("Error sending OTP: ", error);
 //     throw new Error("Failed to send OTP");
 //   }
 // };
